@@ -20,10 +20,8 @@ package plus.dragons.createenchantmentindustry.common.processing.forger;
 
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPoint;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPointType;
+import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.Containers;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -37,39 +35,22 @@ public class BlazeForgerArmInteractionPoint extends ArmInteractionPoint {
     }
 
     @Override
-    public ItemStack insert(ItemStack stack, boolean simulate) {
+    public ItemStack insert(ItemStack stack, TransactionContext transaction) {
         if (!(level.getBlockEntity(pos) instanceof BlazeForgerBlockEntity forger))
             return stack;
         ItemStack input = stack.copy();
-        InteractionResultHolder<ItemStack> result = BlazeExperienceBlock.applyFuel(cachedState, level, pos, input, false, false, simulate);
-        if (result.getResult().consumesAction()) {
-            ItemStack remainder = result.getObject();
-            if (input.isEmpty()) {
-                return remainder;
-            } else {
-                if (!simulate)
-                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), remainder);
-                return input;
-            }
-        } else if (result.getResult() == InteractionResult.PASS) {
-            return forger.insertAutomationItem(input, simulate);
-        }
-        return input;
+        ItemStack fuelRemainder = BlazeExperienceBlock.applyFuel(cachedState, level, pos, input, transaction);
+        return fuelRemainder != null
+                ? fuelRemainder
+                : forger.insertAutomationItem(input, transaction);
     }
 
     @Override
-    public ItemStack extract(int slot, int amount, boolean simulate) {
+    public ItemStack extract(int amount, TransactionContext transaction) {
         if (level.getBlockEntity(pos) instanceof BlazeForgerBlockEntity forger) {
-            return forger.extractAutomationItem(slot, amount, simulate);
+            return forger.extractAutomationItem(amount, transaction);
         }
         return ItemStack.EMPTY;
-    }
-
-    @Override
-    public int getSlotCount() {
-        if (level.getBlockEntity(pos) instanceof BlazeForgerBlockEntity forger)
-            return forger.getAutomationSlotCount();
-        return 0;
     }
 
     public static class Type extends ArmInteractionPointType {

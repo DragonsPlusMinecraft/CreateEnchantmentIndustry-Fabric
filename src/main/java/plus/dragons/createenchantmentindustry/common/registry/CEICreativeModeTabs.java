@@ -24,33 +24,31 @@ import static plus.dragons.createdragonsplus.common.registry.CDPItems.BLAZE_UPGR
 import static plus.dragons.createenchantmentindustry.common.registry.CEIBlocks.*;
 import static plus.dragons.createenchantmentindustry.common.registry.CEIItems.*;
 
-import net.minecraft.core.registries.Registries;
+import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTab.TabVisibility;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
 import plus.dragons.createenchantmentindustry.util.CEILang;
 
 public class CEICreativeModeTabs {
-    private static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister
-            .create(Registries.CREATIVE_MODE_TAB, CEICommon.ID);
-    public static final RegistryObject<CreativeModeTab> BASE = TABS.register(
-            "base", () -> base(CEICommon.asResource("base")));
+    public static CreativeModeTab BASE;
 
-    public static void register(IEventBus modBus) {
-        TABS.register(modBus);
+    public static void register() {
+        if (BASE != null)
+            return;
+        ResourceLocation id = CEICommon.asResource("base");
+        BASE = Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, id, base(id));
     }
 
     private static CreativeModeTab base(ResourceLocation id) {
-        return CreativeModeTab.builder()
+        return FabricItemGroup.builder()
                 .title(CEILang.description("itemGroup", id).component())
                 .icon(BLAZE_ENCHANTER::asStack)
                 .displayItems(CEICreativeModeTabs::buildBaseContents)
-                .withTabsBefore(new ResourceLocation("create_dragons_plus", "base"))
                 .build();
     }
 

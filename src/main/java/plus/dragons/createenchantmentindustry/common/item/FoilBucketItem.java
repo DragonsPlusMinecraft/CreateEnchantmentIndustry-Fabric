@@ -18,14 +18,13 @@
 
 package plus.dragons.createenchantmentindustry.common.item;
 
-import java.util.function.Supplier;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 
 /** Forge 1.20.1 equivalent of an item with the enchantment-glint data component set. */
 public class FoilBucketItem extends BucketItem {
-    public FoilBucketItem(Supplier<? extends Fluid> fluid, Properties properties) {
+    public FoilBucketItem(Fluid fluid, Properties properties) {
         super(fluid, properties);
     }
 

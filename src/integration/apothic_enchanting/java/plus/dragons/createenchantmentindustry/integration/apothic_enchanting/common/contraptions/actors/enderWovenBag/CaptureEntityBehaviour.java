@@ -38,14 +38,15 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.Tags;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.config.CEIAConfig;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.util.CEIALang;
 
 public class CaptureEntityBehaviour extends BlockEntityBehaviour implements IHaveGoggleInformation {
     public static final BehaviourType<CaptureEntityBehaviour> TYPE = new BehaviourType<>("capture_entity");
     private static final TagKey<EntityType<?>> CAPTURING_NOT_SUPPORTED = TagKey.create(
-            Registries.ENTITY_TYPE, new ResourceLocation("forge", "capturing_not_supported"));
+            Registries.ENTITY_TYPE, new ResourceLocation("c", "capturing_not_supported"));
+    private static final TagKey<EntityType<?>> BOSSES = TagKey.create(
+            Registries.ENTITY_TYPE, new ResourceLocation("c", "bosses"));
     protected AABB effectiveAABB;
     protected StoredEntities entities;
     protected boolean release;
@@ -123,7 +124,7 @@ public class CaptureEntityBehaviour extends BlockEntityBehaviour implements IHav
 
     static boolean test(LivingEntity target) {
         return target.isAlive() && target instanceof Mob
-                && (!target.getType().is(Tags.EntityTypes.BOSSES) || CEIAConfig.server().utility().enderWovenBagPullBossToggle.get())
+                && (!target.getType().is(BOSSES) || CEIAConfig.server().utility().enderWovenBagPullBossToggle.get())
                 && !target.getType().is(CAPTURING_NOT_SUPPORTED)
                 && !target.isRemoved() && !target.isPassenger() && target.getType().canSerialize();
     }

@@ -20,15 +20,13 @@ package plus.dragons.createenchantmentindustry.integration.apothic_enchanting.in
 
 import com.google.common.base.Preconditions;
 import com.simibubi.create.AllBlocks;
-import dev.shadowsoffire.apotheosis.Apoth;
+import dev.shadowsoffire.apotheosis.ench.Ench;
 import java.util.stream.Collectors;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.crafting.RecipeManager;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.loading.FMLLoader;
 import org.jetbrains.annotations.ApiStatus;
 import plus.dragons.createdragonsplus.util.ErrorMessages;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.processing.infuser.InfusingRecipe;
@@ -45,7 +43,7 @@ public class CEIAJeiRuntime {
         var recipeManager = getRecipeManager();
         registration.addRecipes(InfusingCategory.TYPE, recipeManager.getAllRecipesFor(CEIARecipes.INFUSING.getType()));
         registration.addRecipes(InfusingCategory.TYPE, recipeManager
-                .getAllRecipesFor(Apoth.RecipeTypes.INFUSION)
+                .getAllRecipesFor(Ench.RecipeTypes.INFUSION)
                 .stream()
                 .map(InfusingRecipe::createDisplayRecipe)
                 .collect(Collectors.toList()));
@@ -57,8 +55,6 @@ public class CEIAJeiRuntime {
 
     @ApiStatus.Internal
     public static RecipeManager getRecipeManager() {
-        if (FMLLoader.getDist() != Dist.CLIENT)
-            throw new IllegalStateException("Retreiving recipe manager from client level is only supported for client");
         var minecraft = Minecraft.getInstance();
         Preconditions.checkNotNull(minecraft, ErrorMessages.notNull("minecraft"));
         var level = minecraft.level;

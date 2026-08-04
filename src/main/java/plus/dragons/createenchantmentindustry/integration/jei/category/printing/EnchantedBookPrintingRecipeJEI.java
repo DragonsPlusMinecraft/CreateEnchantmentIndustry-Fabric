@@ -39,6 +39,7 @@ import plus.dragons.createenchantmentindustry.common.registry.CEIDataMaps;
 import plus.dragons.createenchantmentindustry.common.registry.CEIEnchantments;
 import plus.dragons.createenchantmentindustry.common.registry.CEIFluids;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 import plus.dragons.createenchantmentindustry.util.CEIIntIntPair;
 
 public class EnchantedBookPrintingRecipeJEI implements PrintingRecipeJEI {
@@ -100,9 +101,11 @@ public class EnchantedBookPrintingRecipeJEI implements PrintingRecipeJEI {
     @Override
     public void setFluid(IRecipeSlotBuilder slot) {
         getCost().ifPresent(cost -> {
-            slot.addFluidStack(CEIFluids.EXPERIENCE.get(), cost);
+            slot.addFluidStack(CEIFluids.EXPERIENCE.getSource(), CEIFluidUnits.millibuckets(cost));
             CEIDataMaps.getSourceFluidEntries(CEIDataMaps.FLUID_UNIT_EXPERIENCE)
-                    .forEach(Pairs.accept((fluid, unit) -> slot.addFluidStack(fluid, (long) unit * cost)));
+                    .forEach(Pairs.accept((fluid, unit) -> slot.addFluidStack(
+                            fluid,
+                            CEIFluidUnits.millibuckets(Math.multiplyExact((long) unit, cost)))));
         });
     }
 

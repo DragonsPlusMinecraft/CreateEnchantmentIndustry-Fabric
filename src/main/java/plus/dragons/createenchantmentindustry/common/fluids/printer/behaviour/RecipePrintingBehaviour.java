@@ -20,6 +20,7 @@ package plus.dragons.createenchantmentindustry.common.fluids.printer.behaviour;
 
 import com.simibubi.create.content.processing.sequenced.SequencedAssemblyRecipe;
 import com.simibubi.create.foundation.utility.CreateLang;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.ChatFormatting;
@@ -28,7 +29,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createenchantmentindustry.common.fluids.printer.PrinterBlockEntity;
 import plus.dragons.createenchantmentindustry.common.fluids.printer.PrintingInput;
@@ -75,10 +75,10 @@ public class RecipePrintingBehaviour implements PrintingBehaviour {
     }
 
     @Override
-    public int getRequiredFluidAmount(Level level, ItemStack stack, FluidStack fluidStack) {
+    public long getRequiredFluidAmount(Level level, ItemStack stack, FluidStack fluidStack) {
         return findRecipe(level, stack, fluidStack)
                 .map(recipe -> recipe.getFluidIngredients().get(0).getRequiredAmount())
-                .orElse(0);
+                .orElse(0L);
     }
 
     @Override

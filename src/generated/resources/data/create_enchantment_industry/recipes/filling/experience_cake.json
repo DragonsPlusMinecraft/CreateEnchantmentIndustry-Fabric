@@ -5,7 +5,7 @@
       "item": "create_enchantment_industry:experience_cake_base"
     },
     {
-      "amount": 1000,
+      "amount": 81000,
       "fluid": "create_enchantment_industry:experience",
       "nbt": {}
     }

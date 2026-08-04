@@ -28,6 +28,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.random.WeightedRandom;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
@@ -53,12 +54,16 @@ public class CEIEnchantmentHelper {
     }
 
     public static int getAdjustedLevel(ItemStack stack, int level) {
-        var value = stack.getEnchantmentValue();
+        var value = stack.getItem().getEnchantmentValue();
         if (value > 0)
             level += 1 + value / 4;
         float f = 0.15F;
         level = Mth.clamp(Math.round(level + level * f), 1, Integer.MAX_VALUE);
         return level;
+    }
+
+    public static boolean canApplyAtEnchantingTable(Enchantment enchantment, ItemStack stack) {
+        return stack.is(Items.BOOK) || enchantment.canEnchant(stack);
     }
 
     public static List<EnchantmentInstance> getAvailableEnchantmentResults(int level, Stream<Enchantment> possibleEnchantments, boolean special) {

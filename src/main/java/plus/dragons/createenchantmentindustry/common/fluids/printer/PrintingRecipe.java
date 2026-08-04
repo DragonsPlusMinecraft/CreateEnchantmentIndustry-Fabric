@@ -19,16 +19,16 @@
 package plus.dragons.createenchantmentindustry.common.fluids.printer;
 
 import com.google.gson.JsonObject;
-import com.simibubi.create.compat.jei.category.sequencedAssembly.SequencedAssemblySubCategory;
+import com.simibubi.create.compat.recipeViewerCommon.SequencedAssemblySubCategoryType;
 import com.simibubi.create.content.processing.recipe.ProcessingRecipe;
 import com.simibubi.create.content.processing.recipe.ProcessingRecipeBuilder;
 import com.simibubi.create.content.processing.recipe.ProcessingRecipeBuilder.ProcessingRecipeParams;
 import com.simibubi.create.content.processing.recipe.ProcessingRecipeSerializer;
 import com.simibubi.create.content.processing.sequenced.IAssemblyRecipe;
 import com.simibubi.create.foundation.fluid.FluidIngredient;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
@@ -42,7 +42,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fluids.FluidStack;
 import plus.dragons.createenchantmentindustry.common.registry.CEIBlocks;
 import plus.dragons.createenchantmentindustry.common.registry.CEIRecipes;
 import plus.dragons.createenchantmentindustry.integration.jei.category.assembly.AssemblyPrintingCategory;
@@ -125,8 +124,11 @@ public class PrintingRecipe extends ProcessingRecipe<PrintingInput> implements I
     }
 
     @Override
-    public Supplier<Supplier<SequencedAssemblySubCategory>> getJEISubCategory() {
-        return () -> AssemblyPrintingCategory::new;
+    public SequencedAssemblySubCategoryType getJEISubCategory() {
+        return new SequencedAssemblySubCategoryType(
+                () -> AssemblyPrintingCategory::new,
+                () -> () -> null,
+                () -> () -> null);
     }
 
     @Override

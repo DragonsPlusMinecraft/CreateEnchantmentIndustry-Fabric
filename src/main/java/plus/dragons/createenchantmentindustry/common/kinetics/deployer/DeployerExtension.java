@@ -22,27 +22,21 @@ import com.simibubi.create.AllItems;
 import com.simibubi.create.content.kinetics.deployer.DeployerFakePlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.entity.living.LivingExperienceDropEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import plus.dragons.createenchantmentindustry.common.fluids.experience.ExperienceHelper;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
 
-@EventBusSubscriber
-public class DeployerExtension {
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onLivingExperienceDrop(final LivingExperienceDropEvent event) {
-        if (!(event.getAttackingPlayer() instanceof DeployerFakePlayer deployer))
-            return;
-        if (!CEIConfig.kinetics().deployerKillDropXp.get())
-            return;
-        int experience = Mth.ceil(event.getDroppedExperience() * CEIConfig.kinetics().deployerKillXpScale.getF());
-        event.setDroppedExperience(experience);
-        if (CEIConfig.kinetics().deployerCollectXp.get()) {
+public final class DeployerExtension {
+    private static final ThreadLocal<DeployerFakePlayer> BLOCK_EXPERIENCE_CONTEXT = new ThreadLocal<>();
+
+    private DeployerExtension() {}
+
+    public static int handleKillExperience(DeployerFakePlayer deployer, int droppedExperience) {
+        int experience = Mth.ceil(droppedExperience * CEIConfig.kinetics().deployerKillXpScale.getF());
+        if (experience > 0 && CEIConfig.kinetics().deployerCollectXp.get()) {
             collectExperience(deployer, experience);
-            event.setCanceled(true);
+            return 0;
         }
+        return experience;
     }
 
     public static int handleBlockExperience(DeployerFakePlayer deployer, int droppedExperience) {
@@ -55,6 +49,19 @@ public class DeployerExtension {
             return 0;
         }
         return experience;
+    }
+
+    public static void beginBlockExperience(DeployerFakePlayer deployer) {
+        BLOCK_EXPERIENCE_CONTEXT.set(deployer);
+    }
+
+    public static void endBlockExperience() {
+        BLOCK_EXPERIENCE_CONTEXT.remove();
+    }
+
+    public static int handleCurrentBlockExperience(int droppedExperience) {
+        DeployerFakePlayer deployer = BLOCK_EXPERIENCE_CONTEXT.get();
+        return deployer == null ? droppedExperience : handleBlockExperience(deployer, droppedExperience);
     }
 
     public static void collectExperience(DeployerFakePlayer deployer, int experience) {

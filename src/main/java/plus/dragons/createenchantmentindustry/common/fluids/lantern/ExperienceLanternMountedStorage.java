@@ -22,33 +22,32 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.simibubi.create.api.contraption.storage.fluid.MountedFluidStorageType;
 import com.simibubi.create.api.contraption.storage.fluid.WrapperMountedFluidStorage;
+import com.simibubi.create.foundation.utility.CreateCodecs;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
+import io.github.fabricators_of_create.porting_lib.transfer.fluid.FluidTank;
 import net.minecraft.core.BlockPos;
-import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createenchantmentindustry.common.registry.CEIFluids;
 import plus.dragons.createenchantmentindustry.common.registry.CEIMountedStorageTypes;
 
 public class ExperienceLanternMountedStorage extends WrapperMountedFluidStorage<ExperienceLanternMountedStorage.Handler> {
     public static final Codec<ExperienceLanternMountedStorage> CODEC = RecordCodecBuilder.create(i -> i.group(
-            ExtraCodecs.NON_NEGATIVE_INT.fieldOf("capacity").forGetter(ExperienceLanternMountedStorage::getCapacity),
-            FluidStack.CODEC.optionalFieldOf("fluid", FluidStack.EMPTY)
+            CreateCodecs.NON_NEGATIVE_LONG.fieldOf("capacity").forGetter(ExperienceLanternMountedStorage::getCapacity),
+            CreateCodecs.FLUID_STACK_CODEC.optionalFieldOf("fluid", FluidStack.EMPTY)
                     .forGetter(ExperienceLanternMountedStorage::getFluid))
             .apply(i, ExperienceLanternMountedStorage::new));
 
     private boolean dirty;
 
-    protected ExperienceLanternMountedStorage(MountedFluidStorageType<?> type, int capacity, FluidStack stack) {
+    protected ExperienceLanternMountedStorage(MountedFluidStorageType<?> type, long capacity, FluidStack stack) {
         super(type, new ExperienceLanternMountedStorage.Handler(capacity, stack));
         this.wrapped.onChange = () -> this.dirty = true;
     }
 
-    protected ExperienceLanternMountedStorage(int capacity, FluidStack stack) {
+    protected ExperienceLanternMountedStorage(long capacity, FluidStack stack) {
         this(CEIMountedStorageTypes.EXPERIENCE_LANTERN.get(), capacity, stack);
     }
 
@@ -64,7 +63,7 @@ public class ExperienceLanternMountedStorage extends WrapperMountedFluidStorage<
         return this.wrapped.getFluid();
     }
 
-    public int getCapacity() {
+    public long getCapacity() {
         return this.wrapped.getCapacity();
     }
 
@@ -74,22 +73,17 @@ public class ExperienceLanternMountedStorage extends WrapperMountedFluidStorage<
         return new ExperienceLanternMountedStorage(inventory.getCapacity(), inventory.getFluid().copy());
     }
 
-    @Override
-    public boolean isFluidValid(int tank, @NotNull FluidStack stack) {
-        return super.isFluidValid(tank, stack);
-    }
-
     public static final class Handler extends FluidTank {
         private Runnable onChange = () -> {};
 
-        public Handler(int capacity, FluidStack stack) {
+        public Handler(long capacity, FluidStack stack) {
             super(capacity);
             this.setFluid(stack);
         }
 
         @Override
         public boolean isFluidValid(FluidStack stack) {
-            return stack.getFluid() == CEIFluids.EXPERIENCE.get();
+            return stack.getFluid() == CEIFluids.EXPERIENCE.getSource();
         }
 
         @Override

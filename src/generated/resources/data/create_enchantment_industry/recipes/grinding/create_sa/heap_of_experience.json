@@ -1,11 +1,13 @@
 {
-  "type": "create_enchantment_industry:grinding",
-  "conditions": [
+  "fabric:load_conditions": [
     {
-      "type": "forge:mod_loaded",
-      "modid": "create_sa"
+      "condition": "fabric:all_mods_loaded",
+      "values": [
+        "create_sa"
+      ]
     }
   ],
+  "type": "create_enchantment_industry:grinding",
   "ingredients": [
     {
       "item": "create_sa:heap_of_experience"
@@ -13,7 +15,7 @@
   ],
   "results": [
     {
-      "amount": 12,
+      "amount": 972,
       "fluid": "create_enchantment_industry:experience"
     }
   ]

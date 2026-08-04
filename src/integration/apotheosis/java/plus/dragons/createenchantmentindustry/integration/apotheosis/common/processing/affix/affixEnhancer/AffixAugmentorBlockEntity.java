@@ -55,13 +55,14 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.kinetics.belt.lowerProcessingAppliance.LowerBeltProcessingBehaviour;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.affix.AffixOperationCosts;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.affix.blazeComposer.template.AffixTemplateDisplay;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.registry.CEIAXFluids;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 import plus.dragons.createenchantmentindustry.util.CEILang;
+import plus.dragons.createenchantmentindustry.util.CEITransfer;
 
 public class AffixAugmentorBlockEntity extends KineticBlockEntity implements IHaveGoggleInformation {
     public static final int UNIT_PROCESSING_TIME = 200;
@@ -117,7 +118,7 @@ public class AffixAugmentorBlockEntity extends KineticBlockEntity implements IHa
                 }
             } else {
                 var tank = fluidTank.get().getTankInventory();
-                if (tank.getFluid().getFluid() == CEIAXFluids.APOTHEOTIC_ESSENCE.get()) {
+                if (tank.getFluid().getFluid() == CEIAXFluids.APOTHEOTIC_ESSENCE.getSource()) {
                     if (!powered) {
                         powered = true;
                         notifyUpdate();
@@ -224,7 +225,10 @@ public class AffixAugmentorBlockEntity extends KineticBlockEntity implements IHa
         level.playSound(null, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), SoundEvents.EVOKER_CAST_SPELL, SoundSource.BLOCKS, 0.8f, .9f + 0.2f * level.random.nextFloat());
         level.playSound(null, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), SoundEvents.AMETHYST_CLUSTER_STEP, SoundSource.BLOCKS, 0.24f, .72f + 0.2f * level.random.nextFloat());
         level.playSound(null, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), SoundEvents.SMITHING_TABLE_USE, SoundSource.BLOCKS, 0.32f, .35f + 0.7f * level.random.nextFloat());
-        context.tank().get().getTankInventory().drain(active.cost(), IFluidHandler.FluidAction.EXECUTE);
+        CEITransfer.extractExact(
+                context.tank().get().getTankInventory(),
+                CEIFluidUnits.stackUnits(CEIAXFluids.APOTHEOTIC_ESSENCE.getSource(), active.cost()),
+                false);
         cancelProcessing();
         return HOLD;
     }
@@ -331,9 +335,11 @@ public class AffixAugmentorBlockEntity extends KineticBlockEntity implements IHa
         var tank = fluidTank.get().getTankInventory();
         if (tank.isEmpty())
             return AugmentingContext.withAnalysis(AugmentingStatus.EMPTY_TANK, fluidTank, analysis);
-        if (tank.getFluid().getFluid() != CEIAXFluids.APOTHEOTIC_ESSENCE.get())
+        if (tank.getFluid().getFluid() != CEIAXFluids.APOTHEOTIC_ESSENCE.getSource())
             return AugmentingContext.withAnalysis(AugmentingStatus.WRONG_FLUID, fluidTank, analysis);
-        int cost = analysis.result().map(AffixAugmenting.Result::cost).orElse(0);
+        long cost = analysis.result()
+                .map(result -> CEIFluidUnits.millibuckets(result.cost()))
+                .orElse(0L);
         if (cost <= 0)
             return AugmentingContext.withAnalysis(AugmentingStatus.NO_UPGRADEABLE_AFFIXES, fluidTank, analysis);
         if (cost > tank.getCapacity())
@@ -343,11 +349,11 @@ public class AffixAugmentorBlockEntity extends KineticBlockEntity implements IHa
         return AugmentingContext.withAnalysis(AugmentingStatus.READY, fluidTank, analysis);
     }
 
-    private boolean canPay(Optional<FluidTankBlockEntity> fluidTank, int cost) {
+    private boolean canPay(Optional<FluidTankBlockEntity> fluidTank, long cost) {
         if (cost <= 0 || fluidTank.isEmpty())
             return false;
         var tank = fluidTank.get().getTankInventory();
-        return tank.getFluid().getFluid() == CEIAXFluids.APOTHEOTIC_ESSENCE.get()
+        return tank.getFluid().getFluid() == CEIAXFluids.APOTHEOTIC_ESSENCE.getSource()
                 && cost <= tank.getCapacity()
                 && cost <= tank.getFluidAmount();
     }
@@ -375,14 +381,14 @@ public class AffixAugmentorBlockEntity extends KineticBlockEntity implements IHa
             tag.putString("ActiveAffix", activeAugmenting.affixId().toString());
             tag.putFloat("ActiveFromLevel", activeAugmenting.fromLevel());
             tag.putFloat("ActiveToLevel", activeAugmenting.toLevel());
-            tag.putInt("ActiveCost", activeAugmenting.cost());
+            tag.putLong("ActiveCost", activeAugmenting.cost());
         }
         if (clientPacket && heldPreview != null) {
             tag.putString("HeldPreviewStatus", heldPreview.status().name());
             tag.putString("HeldPreviewAffix", heldPreview.affixId().toString());
             tag.putFloat("HeldPreviewFromLevel", heldPreview.fromLevel());
             tag.putFloat("HeldPreviewToLevel", heldPreview.toLevel());
-            tag.putInt("HeldPreviewCost", heldPreview.cost());
+            tag.putLong("HeldPreviewCost", heldPreview.cost());
             tag.putInt("HeldPreviewTicks", heldPreviewTicks);
         }
     }
@@ -400,7 +406,7 @@ public class AffixAugmentorBlockEntity extends KineticBlockEntity implements IHa
             ResourceLocation affixId = ResourceLocation.tryParse(tag.getString("ActiveAffix"));
             float fromLevel = tag.getFloat("ActiveFromLevel");
             float toLevel = tag.getFloat("ActiveToLevel");
-            int cost = tag.getInt("ActiveCost");
+            long cost = tag.getLong("ActiveCost");
             if (affixId != null && toLevel > fromLevel + AffixOperationCosts.EPSILON && cost > 0) {
                 activeAugmenting = new ActiveAugmenting(affixId, fromLevel, toLevel, cost);
                 heldInputTicks = HELD_INPUT_TIMEOUT;
@@ -413,7 +419,7 @@ public class AffixAugmentorBlockEntity extends KineticBlockEntity implements IHa
             ResourceLocation affixId = ResourceLocation.tryParse(tag.getString("HeldPreviewAffix"));
             float fromLevel = tag.getFloat("HeldPreviewFromLevel");
             float toLevel = tag.getFloat("HeldPreviewToLevel");
-            int cost = tag.getInt("HeldPreviewCost");
+            long cost = tag.getLong("HeldPreviewCost");
             int ticks = tag.getInt("HeldPreviewTicks");
             if (status != null && affixId != null && toLevel > fromLevel + AffixOperationCosts.EPSILON && cost > 0 && ticks > 0) {
                 heldPreview = new AugmentingPreview(status, affixId, fromLevel, toLevel, cost);
@@ -499,7 +505,12 @@ public class AffixAugmentorBlockEntity extends KineticBlockEntity implements IHa
         if (context.status() == AugmentingStatus.READY) {
             return;
         }
-        if (addStatusTooltip(tooltip, context.status(), context.tank(), result.map(AffixAugmenting.Result::cost).orElse(0), Optional.of(context.analysis())))
+        if (addStatusTooltip(
+                tooltip,
+                context.status(),
+                context.tank(),
+                result.map(value -> CEIFluidUnits.millibuckets(value.cost())).orElse(0L),
+                Optional.of(context.analysis())))
             return;
     }
 
@@ -507,14 +518,14 @@ public class AffixAugmentorBlockEntity extends KineticBlockEntity implements IHa
             List<Component> tooltip,
             AugmentingStatus status,
             Optional<FluidTankBlockEntity> tank,
-            int cost,
+            long cost,
             Optional<AffixAugmenting.Analysis> analysis) {
         if (status == AugmentingStatus.INSUFFICIENT_ESSENCE) {
-            int available = tank
+            long available = tank
                     .map(fluidTank -> fluidTank.getTankInventory().getFluidAmount())
                     .orElseGet(() -> getExternalFluidTank()
                             .map(fluidTank -> fluidTank.getTankInventory().getFluidAmount())
-                            .orElse(0));
+                            .orElse(0L));
             CEILang.translate(
                     "gui.goggles.affix_augmentor.insufficient_essence",
                     amount(available).component(),
@@ -560,7 +571,9 @@ public class AffixAugmentorBlockEntity extends KineticBlockEntity implements IHa
                 .add(AffixTemplateDisplay.describeEquipmentAffixUpgrade(stack, result.target().affix(), result.currentLevel(), result.resultLevel()))
                 .style(style)
                 .forGoggles(tooltip, 1);
-        CEILang.translate("gui.goggles.affix_augmentor.cost", amount(result.cost()).component())
+        CEILang.translate(
+                "gui.goggles.affix_augmentor.cost",
+                amount(CEIFluidUnits.millibuckets(result.cost())).component())
                 .style(ChatFormatting.GRAY)
                 .forGoggles(tooltip, 1);
     }
@@ -651,20 +664,22 @@ public class AffixAugmentorBlockEntity extends KineticBlockEntity implements IHa
                 .add(fluid.getDisplayName())
                 .text(" ")
                 .add(amount)
-                .style(fluid.getFluid() == CEIAXFluids.APOTHEOTIC_ESSENCE.get() ? ChatFormatting.GREEN : ChatFormatting.RED)
+                .style(fluid.getFluid() == CEIAXFluids.APOTHEOTIC_ESSENCE.getSource()
+                        ? ChatFormatting.GREEN
+                        : ChatFormatting.RED)
                 .forGoggles(tooltip, 1);
-        if (fluid.getFluid() != CEIAXFluids.APOTHEOTIC_ESSENCE.get()) {
+        if (fluid.getFluid() != CEIAXFluids.APOTHEOTIC_ESSENCE.getSource()) {
             CEILang.translate("gui.goggles.affix_augmentor.wrong_fluid")
                     .style(ChatFormatting.RED)
                     .forGoggles(tooltip, 1);
         }
     }
 
-    private static LangBuilder amount(int amount) {
-        return CEILang.number(amount).text(" mB");
+    private static LangBuilder amount(long amount) {
+        return CEILang.number(CEIFluidUnits.toMillibuckets(amount)).text(" mB");
     }
 
-    private static LangBuilder amount(int amount, int capacity) {
+    private static LangBuilder amount(long amount, long capacity) {
         return amount(amount).text(" / ").add(amount(capacity));
     }
 
@@ -715,13 +730,13 @@ public class AffixAugmentorBlockEntity extends KineticBlockEntity implements IHa
         }
     }
 
-    private record ActiveAugmenting(ResourceLocation affixId, float fromLevel, float toLevel, int cost) {
+    private record ActiveAugmenting(ResourceLocation affixId, float fromLevel, float toLevel, long cost) {
         private static ActiveAugmenting from(AffixAugmenting.Result result) {
             return new ActiveAugmenting(
                     result.target().affix().getId(),
                     result.currentLevel(),
                     result.resultLevel(),
-                    result.cost());
+                    CEIFluidUnits.millibuckets(result.cost()));
         }
 
         private Optional<DynamicHolder<Affix>> resolveAffix() {
@@ -743,14 +758,15 @@ public class AffixAugmentorBlockEntity extends KineticBlockEntity implements IHa
         }
     }
 
-    private record AugmentingPreview(AugmentingStatus status, ResourceLocation affixId, float fromLevel, float toLevel, int cost) {
+    private record AugmentingPreview(
+            AugmentingStatus status, ResourceLocation affixId, float fromLevel, float toLevel, long cost) {
         private static AugmentingPreview from(AugmentingStatus status, AffixAugmenting.Result result) {
             return new AugmentingPreview(
                     status,
                     result.target().affix().getId(),
                     result.currentLevel(),
                     result.resultLevel(),
-                    result.cost());
+                    CEIFluidUnits.millibuckets(result.cost()));
         }
 
         private ActiveAugmenting toActiveAugmenting() {

@@ -18,6 +18,7 @@
 
 package plus.dragons.createenchantmentindustry.common.fluids.experience;
 
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -25,9 +26,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidStack;
 import plus.dragons.createenchantmentindustry.common.registry.CEIDataMaps;
 import plus.dragons.createenchantmentindustry.common.registry.CEIFluids;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 
 public class ExperienceHelper {
     public static int getExperienceForNextLevel(int level) {
@@ -56,24 +57,24 @@ public class ExperienceHelper {
 
     public static int getExperienceFromFluid(FluidStack fluid) {
         if (fluid.isEmpty()) return 0;
-        if (fluid.getFluid() == CEIFluids.EXPERIENCE.get()) return fluid.getAmount();
-        int amount = fluid.getAmount();
+        long amount = CEIFluidUnits.toMillibuckets(fluid.getAmount());
+        if (fluid.getFluid() == CEIFluids.EXPERIENCE.getSource()) return Math.toIntExact(amount);
         Integer unit = CEIDataMaps.FLUID_UNIT_EXPERIENCE.get(fluid.getFluid());
         if (unit == null)
             return 0;
-        return amount / unit;
+        return Math.toIntExact(amount / unit);
     }
 
-    public static int getFluidFromExperience(FluidStack fluid, int amount) {
+    public static long getFluidFromExperience(FluidStack fluid, int amount) {
         return getFluidFromExperience(fluid.getFluid(), amount);
     }
 
-    public static int getFluidFromExperience(Fluid fluid, int amount) {
-        return getExperienceFluidUnit(fluid) * amount;
+    public static long getFluidFromExperience(Fluid fluid, int amount) {
+        return CEIFluidUnits.millibuckets(Math.multiplyExact((long) getExperienceFluidUnit(fluid), amount));
     }
 
     public static int getExperienceFluidUnit(Fluid fluid) {
-        if (CEIFluids.EXPERIENCE.is(fluid))
+        if (CEIFluids.EXPERIENCE.getSource().isSame(fluid))
             return 1;
         Integer unit = CEIDataMaps.FLUID_UNIT_EXPERIENCE.get(fluid);
         return unit == null ? 0 : unit;
@@ -91,7 +92,7 @@ public class ExperienceHelper {
     }
 
     public static int repairItem(int amount, ServerLevel level, ItemStack stack, boolean simulate) {
-        int repairing = (int) (amount * stack.getXpRepairRatio());
+        int repairing = amount * 2;
         int repaired = Math.min(repairing, stack.getDamageValue());
         if (repaired == 0)
             return 0;

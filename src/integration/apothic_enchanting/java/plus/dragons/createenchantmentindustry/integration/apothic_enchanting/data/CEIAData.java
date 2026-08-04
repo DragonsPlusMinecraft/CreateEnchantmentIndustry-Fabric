@@ -18,34 +18,20 @@
 
 package plus.dragons.createenchantmentindustry.integration.apothic_enchanting.data;
 
-import static plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.CEIACommon.REGISTRATE;
-
-import net.minecraftforge.data.event.GatherDataEvent;
-import net.minecraftforge.data.loading.DatagenModLoader;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import plus.dragons.createenchantmentindustry.data.CEINamedDataProvider;
+import net.createmod.ponder.foundation.PonderIndex;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.client.ponder.CEIAPonderPlugin;
 
-public class CEIAData {
-    public CEIAData(IEventBus modBus) {
-        if (!DatagenModLoader.isRunningDataGen())
-            return;
-        REGISTRATE.registerPonderLocalization(CEIAPonderPlugin::new);
-        modBus.register(this);
+public final class CEIAData {
+    private CEIAData() {}
+
+    public static void initialize() {
+        if (PonderIndex.streamPlugins().noneMatch(plugin -> plugin instanceof CEIAPonderPlugin))
+            PonderIndex.addPlugin(new CEIAPonderPlugin());
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void generate(final GatherDataEvent event) {
-        var generator = event.getGenerator();
-        var existingFileHelper = event.getExistingFileHelper();
-        var lookupProvider = event.getLookupProvider();
-        var output = generator.getPackOutput();
-        var client = event.includeClient();
-        var server = event.includeServer();
-        generator.addProvider(server, new CEINamedDataProvider(
-                "Create Enchantment Industry Apothic Enchanting Recipes", new CEIARecipeProvider(output)));
-        generator.addProvider(server, new CEIAConditionalLootTableProvider(output, lookupProvider));
+    public static void registerProviders(FabricDataGenerator.Pack pack) {
+        pack.addProvider(CEIARecipeProvider::new);
+        pack.addProvider(CEIAConditionalLootTableProvider::new);
     }
 }

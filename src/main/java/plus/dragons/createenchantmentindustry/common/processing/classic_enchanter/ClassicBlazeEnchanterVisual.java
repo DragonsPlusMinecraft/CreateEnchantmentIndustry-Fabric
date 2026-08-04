@@ -45,6 +45,7 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
+import plus.dragons.createdragonsplus.client.renderer.blockentity.BlazeBlockEntityClient;
 import plus.dragons.createdragonsplus.util.CodeReference;
 import plus.dragons.createdragonsplus.util.FieldsNullabilityUnknownByDefault;
 
@@ -119,7 +120,7 @@ public class ClassicBlazeEnchanterVisual extends AbstractBlockEntityVisual<Class
             flame = null;
         }
         // Update goggles
-        PartialModel gogglesModel = blockEntity.getGogglesModel(heatLevel);
+        PartialModel gogglesModel = null;
         if (goggles == null) {
             if (gogglesModel != null) {
                 goggles = instancerProvider()
@@ -213,7 +214,7 @@ public class ClassicBlazeEnchanterVisual extends AbstractBlockEntityVisual<Class
 
     @Override
     public void tick(TickableVisual.Context context) {
-        blockEntity.tickAnimation();
+        BlazeBlockEntityClient.tickAnimation(blockEntity);
     }
 
     @Override

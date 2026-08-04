@@ -19,9 +19,10 @@
 package plus.dragons.createenchantmentindustry.common.fluids.experience;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 public final class ExperienceFluidDropContext {
     private static final ThreadLocal<Integer> SUPPRESSED = ThreadLocal.withInitial(() -> 0);
@@ -40,17 +41,8 @@ public final class ExperienceFluidDropContext {
     }
 
     public static void dropExperience(ServerLevel level, BlockState removedState, BlockPos pos, int experience) {
-        if (experience <= 0 || SUPPRESSED.get() > 0 || level.restoringBlockSnapshots)
+        if (experience <= 0 || SUPPRESSED.get() > 0)
             return;
-        if (!level.captureBlockSnapshots) {
-            removedState.getBlock().popExperience(level, pos, experience);
-            return;
-        }
-
-        var server = level.getServer();
-        server.tell(new TickTask(server.getTickCount(), () -> {
-            if (!level.getBlockState(pos).equals(removedState))
-                removedState.getBlock().popExperience(level, pos, experience);
-        }));
+        ExperienceOrb.award(level, Vec3.atCenterOf(pos), experience);
     }
 }

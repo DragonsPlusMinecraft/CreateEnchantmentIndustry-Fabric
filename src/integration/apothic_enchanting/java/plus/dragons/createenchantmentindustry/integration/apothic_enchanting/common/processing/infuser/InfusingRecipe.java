@@ -28,8 +28,14 @@ import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringB
 import com.simibubi.create.foundation.fluid.FluidIngredient;
 import dev.shadowsoffire.apotheosis.ench.table.EnchantingRecipe;
 import dev.shadowsoffire.apotheosis.util.ApothMiscUtil;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import java.util.ArrayList;
 import java.util.List;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
@@ -38,15 +44,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.items.IItemHandler;
-import org.jetbrains.annotations.Nullable;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.registry.CEIAFluids;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.registry.CEIARecipes;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 
-/** Create processing wrapper for native CEI recipes and Apotheosis 7 enchanting recipes. */
+/** Create processing wrapper for native CEI recipes and Zenith enchanting recipes. */
 public class InfusingRecipe extends ProcessingRecipe<Container> {
     private InfusionStats stats = InfusionStats.EMPTY;
 
@@ -103,21 +105,18 @@ public class InfusingRecipe extends ProcessingRecipe<Container> {
             return false;
         }
 
-        IItemHandler availableItems = getItemHandler(basin);
-        IFluidHandler availableFluids = getFluidHandler(basin);
-        IFluidHandler reagentTank = infuser.getFluidHandler(null);
+        Storage<ItemVariant> availableItems = basin.getInputInventory();
+        Storage<FluidVariant> availableFluids = basin.inputTank.getCapability();
+        Storage<FluidVariant> reagentTank = infuser.getFluidStorage(null);
         if (reagentTank == null) {
             return false;
         }
 
-        int inputSlot = -1;
+        ItemVariant itemInput = ItemVariant.blank();
         FluidStack fluidInput = FluidStack.EMPTY;
         if (!recipe.ingredients.isEmpty()) {
-            if (availableItems == null) {
-                return false;
-            }
-            inputSlot = findMatchingItemSlot(availableItems, recipe.ingredients.get(0));
-            if (inputSlot < 0) {
+            itemInput = findMatchingItem(availableItems, recipe.ingredients.get(0));
+            if (itemInput.isBlank()) {
                 return false;
             }
         } else if (!recipe.fluidIngredients.isEmpty()) {
@@ -137,184 +136,115 @@ public class InfusingRecipe extends ProcessingRecipe<Container> {
                 .filter(stack -> !stack.isEmpty())
                 .map(FluidStack::copy)
                 .toList();
-        if (!matchesFilter(basin.getFilter(), outputItems, outputFluids)
-                || !basin.acceptOutputs(outputItems, outputFluids, true)) {
+        if (!matchesFilter(basin.getFilter(), outputItems, outputFluids)) {
             return false;
         }
 
-        int requiredAmount = ApothMiscUtil.getExpCostForSlot((int) recipe.stats.eterna(), 0);
+        long requiredAmount = CEIFluidUnits.millibuckets(
+                ApothMiscUtil.getExpCostForSlot((int) recipe.stats.eterna(), 0));
         FluidStack reagent = findInfusingIngredient(reagentTank, requiredAmount);
-        if (reagent.isEmpty() || simulateOnly) {
-            return !reagent.isEmpty();
-        }
-
-        ItemStack extractedItem = ItemStack.EMPTY;
-        FluidStack drainedInput = FluidStack.EMPTY;
-        if (inputSlot >= 0) {
-            extractedItem = availableItems.extractItem(inputSlot, 1, false);
-            if (!recipe.ingredients.get(0).test(extractedItem)) {
-                rollbackItem(availableItems, inputSlot, extractedItem);
-                return false;
-            }
-        } else {
-            drainedInput = availableFluids.drain(fluidInput, IFluidHandler.FluidAction.EXECUTE);
-            if (!sameFluidAndAmount(fluidInput, drainedInput)) {
-                rollbackFluid(availableFluids, drainedInput);
-                return false;
-            }
-        }
-
-        FluidStack drainedReagent = reagentTank.drain(reagent, IFluidHandler.FluidAction.EXECUTE);
-        if (!sameFluidAndAmount(reagent, drainedReagent)) {
-            rollbackItem(availableItems, inputSlot, extractedItem);
-            rollbackFluid(availableFluids, drainedInput);
-            rollbackFluid(reagentTank, drainedReagent);
+        if (reagent.isEmpty()) {
             return false;
         }
-        if (basin.acceptOutputs(outputItems, outputFluids, false)) {
+
+        try (Transaction transaction = Transaction.openOuter()) {
+            if (!itemInput.isBlank()) {
+                if (availableItems.extract(itemInput, 1, transaction) != 1) {
+                    return false;
+                }
+            } else if (availableFluids.extract(fluidInput.getType(), fluidInput.getAmount(), transaction) != fluidInput.getAmount()) {
+                return false;
+            }
+
+            if (reagentTank.extract(reagent.getType(), reagent.getAmount(), transaction) != reagent.getAmount()) {
+                return false;
+            }
+            if (!basin.acceptOutputs(outputItems, outputFluids, transaction)) {
+                return false;
+            }
+            if (!simulateOnly)
+                transaction.commit();
             return true;
         }
-
-        rollbackItem(availableItems, inputSlot, extractedItem);
-        rollbackFluid(availableFluids, drainedInput);
-        rollbackFluid(reagentTank, drainedReagent);
-        return false;
     }
 
     private static boolean processApotheosis(
             InfuserBlockEntity infuser, BasinBlockEntity basin, EnchantingRecipe recipe, boolean simulateOnly) {
-        IItemHandler availableItems = getItemHandler(basin);
-        IFluidHandler reagentTank = infuser.getFluidHandler(null);
-        if (availableItems == null || reagentTank == null) {
+        Storage<ItemVariant> availableItems = basin.getInputInventory();
+        Storage<FluidVariant> reagentTank = infuser.getFluidStorage(null);
+        if (reagentTank == null) {
             return false;
         }
 
-        int inputSlot = findMatchingItemSlot(availableItems, recipe, infuser.infusionStats);
-        if (inputSlot < 0) {
+        ItemVariant inputVariant = findMatchingItem(availableItems, recipe, infuser.infusionStats);
+        if (inputVariant.isBlank()) {
             return false;
         }
-        ItemStack input = availableItems.extractItem(inputSlot, 1, true);
+        ItemStack input = inputVariant.toStack();
         ItemStack output = recipe.assemble(
                 input,
                 infuser.infusionStats.eterna(),
                 infuser.infusionStats.quanta(),
                 infuser.infusionStats.arcana());
         if (output.isEmpty()
-                || !matchesFilter(basin.getFilter(), List.of(output), List.of())
-                || !basin.acceptOutputs(List.of(output), List.of(), true)) {
+                || !matchesFilter(basin.getFilter(), List.of(output), List.of())) {
             return false;
         }
 
-        int requiredAmount = ApothMiscUtil.getExpCostForSlot((int) recipe.getRequirements().eterna(), 0);
+        long requiredAmount = CEIFluidUnits.millibuckets(
+                ApothMiscUtil.getExpCostForSlot((int) recipe.getRequirements().eterna(), 0));
         FluidStack reagent = findInfusingIngredient(reagentTank, requiredAmount);
-        if (reagent.isEmpty() || simulateOnly) {
-            return !reagent.isEmpty();
+        if (reagent.isEmpty()) {
+            return false;
         }
 
-        ItemStack extracted = availableItems.extractItem(inputSlot, 1, false);
-        if (!recipe.matches(
-                extracted,
-                infuser.infusionStats.eterna(),
-                infuser.infusionStats.quanta(),
-                infuser.infusionStats.arcana())) {
-            rollbackItem(availableItems, inputSlot, extracted);
-            return false;
-        }
-        FluidStack drainedReagent = reagentTank.drain(reagent, IFluidHandler.FluidAction.EXECUTE);
-        if (!sameFluidAndAmount(reagent, drainedReagent)) {
-            rollbackItem(availableItems, inputSlot, extracted);
-            rollbackFluid(reagentTank, drainedReagent);
-            return false;
-        }
-        if (basin.acceptOutputs(List.of(output), List.of(), false)) {
+        try (Transaction transaction = Transaction.openOuter()) {
+            if (availableItems.extract(inputVariant, 1, transaction) != 1
+                    || reagentTank.extract(reagent.getType(), reagent.getAmount(), transaction) != reagent.getAmount()
+                    || !basin.acceptOutputs(List.of(output), List.of(), transaction)) {
+                return false;
+            }
+            if (!simulateOnly)
+                transaction.commit();
             return true;
         }
-
-        rollbackItem(availableItems, inputSlot, extracted);
-        rollbackFluid(reagentTank, drainedReagent);
-        return false;
     }
 
-    private static @Nullable IItemHandler getItemHandler(BasinBlockEntity basin) {
-        return basin.getCapability(ForgeCapabilities.ITEM_HANDLER).orElse(null);
-    }
-
-    private static @Nullable IFluidHandler getFluidHandler(BasinBlockEntity basin) {
-        return basin.getCapability(ForgeCapabilities.FLUID_HANDLER).orElse(null);
-    }
-
-    private static int findMatchingItemSlot(IItemHandler items, Ingredient ingredient) {
-        for (int slot = 0; slot < items.getSlots(); slot++) {
-            if (ingredient.test(items.extractItem(slot, 1, true))) {
-                return slot;
-            }
+    private static ItemVariant findMatchingItem(Storage<ItemVariant> items, Ingredient ingredient) {
+        for (StorageView<ItemVariant> view : items.nonEmptyViews()) {
+            if (view.getAmount() > 0 && ingredient.test(view.getResource().toStack()))
+                return view.getResource();
         }
-        return -1;
+        return ItemVariant.blank();
     }
 
-    private static int findMatchingItemSlot(IItemHandler items, EnchantingRecipe recipe, InfusionStats stats) {
-        for (int slot = 0; slot < items.getSlots(); slot++) {
-            ItemStack input = items.extractItem(slot, 1, true);
-            if (recipe.matches(input, stats.eterna(), stats.quanta(), stats.arcana())) {
-                return slot;
-            }
+    private static ItemVariant findMatchingItem(
+            Storage<ItemVariant> items, EnchantingRecipe recipe, InfusionStats stats) {
+        for (StorageView<ItemVariant> view : items.nonEmptyViews()) {
+            ItemStack input = view.getResource().toStack();
+            if (view.getAmount() > 0 && recipe.matches(input, stats.eterna(), stats.quanta(), stats.arcana()))
+                return view.getResource();
         }
-        return -1;
+        return ItemVariant.blank();
     }
 
-    private static FluidStack findMatchingFluid(IFluidHandler fluids, FluidIngredient ingredient) {
-        for (int tank = 0; tank < fluids.getTanks(); tank++) {
-            FluidStack available = fluids.getFluidInTank(tank);
-            if (available.isEmpty()) {
-                continue;
-            }
-            FluidStack requested = available.copy();
-            requested.setAmount(ingredient.getRequiredAmount());
-            if (!ingredient.test(requested)) {
-                continue;
-            }
-            FluidStack drained = fluids.drain(requested, IFluidHandler.FluidAction.SIMULATE);
-            if (sameFluidAndAmount(requested, drained)) {
+    private static FluidStack findMatchingFluid(Storage<FluidVariant> fluids, FluidIngredient ingredient) {
+        long required = ingredient.getRequiredAmount();
+        for (StorageView<FluidVariant> view : fluids.nonEmptyViews()) {
+            FluidStack requested = new FluidStack(view.getResource(), required);
+            if (view.getAmount() >= required && ingredient.test(requested))
                 return requested;
-            }
         }
         return FluidStack.EMPTY;
     }
 
-    private static FluidStack findInfusingIngredient(IFluidHandler fluids, int amount) {
-        for (int tank = 0; tank < fluids.getTanks(); tank++) {
-            FluidStack available = fluids.getFluidInTank(tank);
-            if (!available.getFluid().is(CEIAFluids.MOD_TAGS.infusing_ingredients)) {
-                continue;
-            }
-            FluidStack requested = available.copy();
-            requested.setAmount(amount);
-            FluidStack drained = fluids.drain(requested, IFluidHandler.FluidAction.SIMULATE);
-            if (sameFluidAndAmount(requested, drained)) {
-                return requested;
-            }
+    private static FluidStack findInfusingIngredient(Storage<FluidVariant> fluids, long amount) {
+        for (StorageView<FluidVariant> view : fluids.nonEmptyViews()) {
+            if (view.getAmount() >= amount
+                    && view.getResource().getFluid().is(CEIAFluids.MOD_TAGS.infusing_ingredients))
+                return new FluidStack(view.getResource(), amount);
         }
         return FluidStack.EMPTY;
-    }
-
-    private static boolean sameFluidAndAmount(FluidStack expected, FluidStack actual) {
-        return !actual.isEmpty() && expected.isFluidStackIdentical(actual);
-    }
-
-    private static void rollbackItem(@Nullable IItemHandler handler, int preferredSlot, ItemStack stack) {
-        if (handler == null || stack.isEmpty()) {
-            return;
-        }
-        ItemStack remainder = preferredSlot >= 0 ? handler.insertItem(preferredSlot, stack, false) : stack;
-        for (int slot = 0; !remainder.isEmpty() && slot < handler.getSlots(); slot++) {
-            remainder = handler.insertItem(slot, remainder, false);
-        }
-    }
-
-    private static void rollbackFluid(@Nullable IFluidHandler handler, FluidStack stack) {
-        if (handler != null && !stack.isEmpty()) {
-            handler.fill(stack, IFluidHandler.FluidAction.EXECUTE);
-        }
     }
 
     private static boolean matchesFilter(

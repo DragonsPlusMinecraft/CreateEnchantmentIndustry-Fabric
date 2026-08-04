@@ -20,7 +20,7 @@ package plus.dragons.createenchantmentindustry.integration.jei.category.assembly
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.compat.jei.category.CreateRecipeCategory;
-import com.simibubi.create.compat.jei.category.sequencedAssembly.SequencedAssemblySubCategory;
+import com.simibubi.create.compat.jei.category.sequencedAssembly.JeiSequencedAssemblySubCategory;
 import com.simibubi.create.content.processing.sequenced.SequencedRecipe;
 import com.simibubi.create.foundation.fluid.FluidIngredient;
 import java.util.List;
@@ -29,7 +29,7 @@ import mezz.jei.api.recipe.IFocusGroup;
 import net.minecraft.client.gui.GuiGraphics;
 import plus.dragons.createenchantmentindustry.integration.jei.category.grinding.AnimatedGrindstone;
 
-public class AssemblyGrindingCategory extends SequencedAssemblySubCategory {
+public class AssemblyGrindingCategory extends JeiSequencedAssemblySubCategory {
     private final AnimatedGrindstone grindstone = new AnimatedGrindstone();
 
     public AssemblyGrindingCategory() {

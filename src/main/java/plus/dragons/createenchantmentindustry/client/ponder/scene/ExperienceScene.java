@@ -45,12 +45,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import plus.dragons.createdragonsplus.common.processing.blaze.BlazeBlock;
 import plus.dragons.createenchantmentindustry.common.registry.CEIBlocks;
 import plus.dragons.createenchantmentindustry.common.registry.CEIFluids;
 import plus.dragons.createenchantmentindustry.common.registry.CEIItems;
+import plus.dragons.createenchantmentindustry.util.CEITransfer;
 
 public class ExperienceScene {
     public static void basic(SceneBuilder builder, SceneBuildingUtil util) {
@@ -69,7 +68,8 @@ public class ExperienceScene {
         for (int i = 0; i < 6; i++) {
             scene.world().modifyBlockEntity(util.grid().at(9, 4, 9), FluidTankBlockEntity.class, be -> {
                 var ctrl = be.getControllerBE();
-                if (ctrl != null) ctrl.getTankInventory().fill(new FluidStack(CEIFluids.EXPERIENCE.get(), 10000), IFluidHandler.FluidAction.EXECUTE);
+                if (ctrl != null)
+                    CEITransfer.insertMillibuckets(ctrl.getTankInventory(), CEIFluids.EXPERIENCE.getSource(), 10000, false);
             });
             scene.idle(10);
         }

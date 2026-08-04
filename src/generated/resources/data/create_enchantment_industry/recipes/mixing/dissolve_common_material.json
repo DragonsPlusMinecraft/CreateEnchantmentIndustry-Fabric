@@ -1,24 +1,26 @@
 {
-  "type": "create:mixing",
-  "conditions": [
+  "fabric:load_conditions": [
     {
-      "type": "forge:mod_loaded",
-      "modid": "apotheosis"
+      "condition": "fabric:all_mods_loaded",
+      "values": [
+        "zenith"
+      ]
     },
     {
-      "type": "create_enchantment_industry:apotheosis_module",
+      "condition": "create_enchantment_industry:apotheosis_module",
       "module": "adventure"
     }
   ],
+  "type": "create:mixing",
   "ingredients": [
     {
-      "item": "apotheosis:common_material"
+      "item": "zenith:common_material"
     }
   ],
   "processingTime": 5,
   "results": [
     {
-      "amount": 1,
+      "amount": 81,
       "fluid": "create_enchantment_industry:apotheotic_essence"
     }
   ]

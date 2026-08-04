@@ -18,21 +18,24 @@
 
 package plus.dragons.createenchantmentindustry.integration.apotheosis.common.registry;
 
-import com.simibubi.create.api.registry.CreateRegistries;
+import com.simibubi.create.api.registry.CreateBuiltInRegistries;
 import com.simibubi.create.content.kinetics.fan.processing.FanProcessingType;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
+import java.util.function.Supplier;
+import net.minecraft.core.Registry;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.kinetics.fan.salvaging.SalvagingFanProcessingType;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.CEIACommon;
 
 public class CEIAXFanProcessingTypes {
-    private static final DeferredRegister<FanProcessingType> TYPES = DeferredRegister
-            .create(CreateRegistries.FAN_PROCESSING_TYPE, CEIACommon.ID);
-    public static final RegistryObject<SalvagingFanProcessingType> SALVAGING = TYPES
-            .register("salvaging", SalvagingFanProcessingType::new);
+    public static final Supplier<SalvagingFanProcessingType> SALVAGING = register(
+            "salvaging", SalvagingFanProcessingType::new);
 
-    public static void register(IEventBus modBus) {
-        TYPES.register(modBus);
+    private static <T extends FanProcessingType> Supplier<T> register(String name, Supplier<T> factory) {
+        T type = Registry.register(
+                CreateBuiltInRegistries.FAN_PROCESSING_TYPE,
+                CEIACommon.REGISTRATE.asResource(name),
+                factory.get());
+        return () -> type;
     }
+
+    public static void register() {}
 }

@@ -31,6 +31,7 @@ import com.simibubi.create.content.logistics.depot.DepotBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import dev.shadowsoffire.apotheosis.Apotheosis;
 import dev.shadowsoffire.apotheosis.adventure.Adventure;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import java.util.*;
 import net.createmod.catnip.lang.LangBuilder;
 import net.createmod.catnip.math.VecHelper;
@@ -48,13 +49,13 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.kinetics.belt.lowerProcessingAppliance.LowerBeltProcessingBehaviour;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.socket.gem.gemCutter.GemCutting.Tier;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.registry.CEIAXFluids;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 import plus.dragons.createenchantmentindustry.util.CEILang;
+import plus.dragons.createenchantmentindustry.util.CEITransfer;
 
 public class GemCutterBlockEntity extends KineticBlockEntity implements IHaveGoggleInformation {
     public static final int UNIT_PROCESSING_TIME = 200;
@@ -219,7 +220,10 @@ public class GemCutterBlockEntity extends KineticBlockEntity implements IHaveGog
         handler.handleProcessingOnItem(transported, TransportedItemStackHandlerBehaviour.TransportedResult.convertToAndLeaveHeld(List.of(result), remains));
         level.playSound(null, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), SoundEvents.AMETHYST_CLUSTER_HIT,
                 SoundSource.BLOCKS, 0.75f, .9f + 0.2f * level.random.nextFloat());
-        context.tank().get().getTankInventory().drain(active.cost(), IFluidHandler.FluidAction.EXECUTE);
+        CEITransfer.extractExact(
+                context.tank().get().getTankInventory(),
+                CEIFluidUnits.stackUnits(CEIAXFluids.CRYSTAL_ESSENCE.getSource(), active.cost()),
+                false);
         cancelProcessing();
         return HOLD;
     }
@@ -284,7 +288,7 @@ public class GemCutterBlockEntity extends KineticBlockEntity implements IHaveGog
         return true;
     }
 
-    private boolean canPay(Optional<FluidTankBlockEntity> fluidTank, int cost) {
+    private boolean canPay(Optional<FluidTankBlockEntity> fluidTank, long cost) {
         if (cost <= 0 || fluidTank.isEmpty())
             return false;
         var tank = fluidTank.get().getTankInventory();
@@ -324,7 +328,7 @@ public class GemCutterBlockEntity extends KineticBlockEntity implements IHaveGog
         if (!GemCutting.canCut(from))
             return CuttingContext.withGem(CuttingStatus.ALREADY_PERFECT, fluidTank, from, from, 0);
         var to = GemCutting.resultTier(from);
-        int cost = GemCutting.getCutCost(from);
+        long cost = CEIFluidUnits.millibuckets(GemCutting.getCutCost(from));
         if (fluidTank.isEmpty())
             return CuttingContext.withGem(CuttingStatus.MISSING_TANK, fluidTank, from, to, cost);
         var tank = fluidTank.get().getTankInventory();
@@ -361,14 +365,14 @@ public class GemCutterBlockEntity extends KineticBlockEntity implements IHaveGog
         if (activeCutting != null) {
             tag.putString("ActiveFromRarity", activeCutting.from().name());
             tag.putString("ActiveToRarity", activeCutting.to().name());
-            tag.putInt("ActiveCost", activeCutting.cost());
+            tag.putLong("ActiveCost", activeCutting.cost());
             tag.put("ActiveInput", activeCutting.input().save(new CompoundTag()));
         }
         if (clientPacket && heldPreview != null) {
             tag.putString("HeldPreviewStatus", heldPreview.status().name());
             tag.putString("HeldPreviewFromRarity", heldPreview.from().name());
             tag.putString("HeldPreviewToRarity", heldPreview.to().name());
-            tag.putInt("HeldPreviewCost", heldPreview.cost());
+            tag.putLong("HeldPreviewCost", heldPreview.cost());
             tag.putInt("HeldPreviewTicks", heldPreviewTicks);
         }
     }
@@ -387,7 +391,7 @@ public class GemCutterBlockEntity extends KineticBlockEntity implements IHaveGog
         if (processingTicks > 0 && !activeFromName.isEmpty() && !activeToName.isEmpty() && tag.contains("ActiveInput")) {
             Tier from = tierByName(activeFromName);
             Tier to = tierByName(activeToName);
-            int cost = tag.getInt("ActiveCost");
+            long cost = tag.getLong("ActiveCost");
             ItemStack input = ItemStack.of(tag.getCompound("ActiveInput"));
             if (from != null && to != null && from != to && cost > 0 && !input.isEmpty()) {
                 activeCutting = new ActiveCutting(from, to, cost, input);
@@ -404,7 +408,7 @@ public class GemCutterBlockEntity extends KineticBlockEntity implements IHaveGog
             CuttingStatus status = cuttingStatusByName(tag.getString("HeldPreviewStatus"));
             Tier from = tierByName(previewFromName);
             Tier to = tierByName(previewToName);
-            int cost = tag.getInt("HeldPreviewCost");
+            long cost = tag.getLong("HeldPreviewCost");
             int ticks = tag.getInt("HeldPreviewTicks");
             if (status != null && from != null && to != null && cost > 0 && ticks > 0) {
                 heldPreview = new CuttingPreview(status, from, to, cost);
@@ -483,13 +487,17 @@ public class GemCutterBlockEntity extends KineticBlockEntity implements IHaveGog
                 .forGoggles(tooltip);
     }
 
-    private boolean addContextStatusTooltip(List<Component> tooltip, CuttingStatus status, Optional<FluidTankBlockEntity> tank, int cost) {
+    private boolean addContextStatusTooltip(
+            List<Component> tooltip,
+            CuttingStatus status,
+            Optional<FluidTankBlockEntity> tank,
+            long cost) {
         if (status == CuttingStatus.INSUFFICIENT_ESSENCE) {
-            int available = tank
+            long available = tank
                     .map(fluidTank -> fluidTank.getTankInventory().getFluidAmount())
                     .orElseGet(() -> getExternalFluidTank()
                             .map(fluidTank -> fluidTank.getTankInventory().getFluidAmount())
-                            .orElse(0));
+                            .orElse(0L));
             CEILang.translate(
                     "gui.goggles.gem_cutter.insufficient_essence",
                     amount(available).component(),
@@ -499,11 +507,11 @@ public class GemCutterBlockEntity extends KineticBlockEntity implements IHaveGog
             return true;
         }
         if (status == CuttingStatus.TANK_TOO_SMALL) {
-            int capacity = tank
+            long capacity = tank
                     .map(fluidTank -> fluidTank.getTankInventory().getCapacity())
                     .orElseGet(() -> getExternalFluidTank()
                             .map(fluidTank -> fluidTank.getTankInventory().getCapacity())
-                            .orElse(0));
+                            .orElse(0L));
             CEILang.translate("gui.goggles.gem_cutter.max_cost_tank_too_small", amount(cost, capacity).component())
                     .style(ChatFormatting.RED)
                     .forGoggles(tooltip);
@@ -526,7 +534,13 @@ public class GemCutterBlockEntity extends KineticBlockEntity implements IHaveGog
         return false;
     }
 
-    private void addResultTooltip(List<Component> tooltip, Optional<ItemStack> input, Tier from, Tier to, int cost, ChatFormatting style) {
+    private void addResultTooltip(
+            List<Component> tooltip,
+            Optional<ItemStack> input,
+            Tier from,
+            Tier to,
+            long cost,
+            ChatFormatting style) {
         CEILang.translate("gui.goggles.gem_cutter.result")
                 .forGoggles(tooltip);
         resultLine(input, from, to)
@@ -583,7 +597,7 @@ public class GemCutterBlockEntity extends KineticBlockEntity implements IHaveGog
                     .style(ChatFormatting.RED)
                     .forGoggles(tooltip, 1);
         }
-        int maxCost = maxCutCost();
+        long maxCost = maxCutCost();
         if (tank.getCapacity() < maxCost) {
             CEILang.translate("gui.goggles.gem_cutter.max_cost_tank_too_small", amount(maxCost, tank.getCapacity()).component())
                     .style(ChatFormatting.YELLOW)
@@ -591,25 +605,25 @@ public class GemCutterBlockEntity extends KineticBlockEntity implements IHaveGog
         }
     }
 
-    private static int maxCutCost() {
-        int max = 0;
+    private static long maxCutCost() {
+        long max = 0;
         for (var tier : Tier.values()) {
             if (GemCutting.canCut(tier))
-                max = Math.max(max, GemCutting.getCutCost(tier));
+                max = Math.max(max, CEIFluidUnits.millibuckets(GemCutting.getCutCost(tier)));
         }
         return max;
     }
 
-    private static LangBuilder amount(int amount) {
-        return CEILang.number(amount).text(" mB");
+    private static LangBuilder amount(long amount) {
+        return CEILang.number(CEIFluidUnits.toMillibuckets(amount)).text(" mB");
     }
 
-    private static LangBuilder amount(int amount, int capacity) {
+    private static LangBuilder amount(long amount, long capacity) {
         return amount(amount).text(" / ").add(amount(capacity));
     }
 
     public static boolean isUpgradableGem(ItemStack stack) {
-        return Apotheosis.enableAdventure && stack.is(Adventure.Items.GEM.get()) && GemCutting.canCut(stack);
+        return Apotheosis.enableAdventure && stack.is(Adventure.Items.GEM) && GemCutting.canCut(stack);
     }
 
     @Nullable
@@ -658,7 +672,7 @@ public class GemCutterBlockEntity extends KineticBlockEntity implements IHaveGog
             Optional<FluidTankBlockEntity> tank,
             Tier from,
             Tier to,
-            int cost) {
+            long cost) {
         private boolean hasResult() {
             return cost > 0 && from != to;
         }
@@ -667,12 +681,17 @@ public class GemCutterBlockEntity extends KineticBlockEntity implements IHaveGog
             return new CuttingContext(status, tank, Tier.COMMON, Tier.COMMON, 0);
         }
 
-        private static CuttingContext withGem(CuttingStatus status, Optional<FluidTankBlockEntity> tank, Tier from, Tier to, int cost) {
+        private static CuttingContext withGem(
+                CuttingStatus status,
+                Optional<FluidTankBlockEntity> tank,
+                Tier from,
+                Tier to,
+                long cost) {
             return new CuttingContext(status, tank, from, to, cost);
         }
     }
 
-    private record ActiveCutting(Tier from, Tier to, int cost, ItemStack input) {
+    private record ActiveCutting(Tier from, Tier to, long cost, ItemStack input) {
         private ActiveCutting {
             input = input.copy();
             input.setCount(1);
@@ -689,7 +708,7 @@ public class GemCutterBlockEntity extends KineticBlockEntity implements IHaveGog
         }
     }
 
-    private record CuttingPreview(CuttingStatus status, Tier from, Tier to, int cost) {
+    private record CuttingPreview(CuttingStatus status, Tier from, Tier to, long cost) {
         private static CuttingPreview from(CuttingContext context) {
             return new CuttingPreview(context.status(), context.from(), context.to(), context.cost());
         }

@@ -23,9 +23,12 @@ import static net.minecraft.world.level.block.DirectionalBlock.FACING;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -35,17 +38,15 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createdragonsplus.common.fluids.tank.ConfigurableFluidTank;
 import plus.dragons.createdragonsplus.common.fluids.tank.FluidTankBehaviour;
 import plus.dragons.createenchantmentindustry.common.fluids.experience.ExperienceHelper;
 import plus.dragons.createenchantmentindustry.common.registry.CEIFluids;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
+import plus.dragons.createenchantmentindustry.mixin.ExperienceOrbAccessor;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
+import plus.dragons.createenchantmentindustry.util.CEITransfer;
 
 public class ExperienceLanternBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation {
     protected FluidTankBehaviour tank;
@@ -59,8 +60,8 @@ public class ExperienceLanternBlockEntity extends SmartBlockEntity implements IH
     }
 
     protected ConfigurableFluidTank createTank(Consumer<FluidStack> fluidUpdateCallback) {
-        return new ConfigurableFluidTank(CEIConfig.fluids().experienceLanternFluidCapacity.get(), fluidUpdateCallback.andThen(this::onFluidStackChanged))
-                .allowInsertion(fluidStack -> fluidStack.getFluid() == CEIFluids.EXPERIENCE.get());
+        return new ConfigurableFluidTank(CEIFluidUnits.millibuckets(CEIConfig.fluids().experienceLanternFluidCapacity.get()), fluidUpdateCallback.andThen(this::onFluidStackChanged))
+                .allowInsertion(fluidStack -> fluidStack.getFluid() == CEIFluids.EXPERIENCE.getSource());
     }
 
     @Override
@@ -88,7 +89,11 @@ public class ExperienceLanternBlockEntity extends SmartBlockEntity implements IH
                 else if (playerExp != 0) sum.addAndGet(playerExp);
             });
             if (sum.get() != 0) {
-                var inserted = tank.getPrimaryHandler().fill(new FluidStack(CEIFluids.EXPERIENCE.get(), sum.get()), IFluidHandler.FluidAction.EXECUTE);
+                long insertedUnits = CEITransfer.insert(
+                        tank.getPrimaryHandler(),
+                        CEIFluidUnits.stack(CEIFluids.EXPERIENCE.getSource(), sum.get()),
+                        false);
+                int inserted = Math.toIntExact(CEIFluidUnits.toMillibuckets(insertedUnits));
                 if (inserted != 0) {
                     for (var player : players) {
                         var total = ExperienceHelper.getExperienceForPlayer(player);
@@ -118,14 +123,15 @@ public class ExperienceLanternBlockEntity extends SmartBlockEntity implements IH
         List<ExperienceOrb> experienceOrbs = level.getEntitiesOfClass(ExperienceOrb.class, effectiveAABB);
         if (!experienceOrbs.isEmpty()) {
             for (var orb : experienceOrbs) {
-                var amount = orb.value;
-                var fluidStack = new FluidStack(CEIFluids.EXPERIENCE.get(), amount);
-                var inserted = tank.getPrimaryHandler().fill(fluidStack, IFluidHandler.FluidAction.EXECUTE);
+                int amount = orb.getValue();
+                var fluidStack = CEIFluidUnits.stack(CEIFluids.EXPERIENCE.getSource(), amount);
+                long insertedUnits = CEITransfer.insert(tank.getPrimaryHandler(), fluidStack, false);
+                int inserted = Math.toIntExact(CEIFluidUnits.toMillibuckets(insertedUnits));
                 if (inserted == amount) {
                     orb.remove(Entity.RemovalReason.DISCARDED);
                 } else {
                     if (inserted != 0) {
-                        orb.value -= inserted;
+                        ((ExperienceOrbAccessor) orb).cei$setValue(amount - inserted);
                     }
                     break;
                 }
@@ -158,17 +164,14 @@ public class ExperienceLanternBlockEntity extends SmartBlockEntity implements IH
         level.setBlockAndUpdate(getBlockPos(), getBlockState().setValue(ExperienceLanternBlock.LIGHT, light));
     }
 
-    @Override
-    public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction side) {
-        if (capability == ForgeCapabilities.FLUID_HANDLER
-                && tank != null
-                && (side == null || side.getOpposite() == getBlockState().getValue(FACING)))
-            return tank.getCapability().cast();
-        return super.getCapability(capability, side);
+    public @Nullable Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
+        return tank != null && (side == null || side.getOpposite() == getBlockState().getValue(FACING))
+                ? tank.getCapability()
+                : null;
     }
 
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
-        return containedFluidTooltip(tooltip, isPlayerSneaking, tank.getCapability().cast());
+        return containedFluidTooltip(tooltip, isPlayerSneaking, tank.getCapability());
     }
 }

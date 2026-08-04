@@ -21,18 +21,17 @@ package plus.dragons.createenchantmentindustry.common.fluids.printer.behaviour;
 import com.mojang.serialization.DataResult;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import java.util.Optional;
-import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.IForgeRegistry;
 import plus.dragons.createenchantmentindustry.common.fluids.printer.PrinterBlockEntity;
 
 public interface PrintingBehaviour extends IHaveGoggleInformation {
-    /** Forge registry used by addons to register custom Printer template behaviours. */
-    Supplier<IForgeRegistry<PrintingBehaviourProvider>> REGISTRY = PrintingBehaviourRegistry.REGISTRY;
+    /** Fabric registry used by addons to register custom Printer template behaviours. */
+    Registry<PrintingBehaviourProvider> REGISTRY = PrintingBehaviourRegistry.REGISTRY;
 
     static DataResult<PrintingBehaviour> create(Level level, SmartFluidTankBehaviour tank, ItemStack stack) {
         return PrintingBehaviourRegistry.create(level, tank, stack);
@@ -48,7 +47,7 @@ public interface PrintingBehaviour extends IHaveGoggleInformation {
 
     int getRequiredItemCount(Level level, ItemStack stack);
 
-    int getRequiredFluidAmount(Level level, ItemStack stack, FluidStack fluidStack);
+    long getRequiredFluidAmount(Level level, ItemStack stack, FluidStack fluidStack);
 
     ItemStack getResult(Level level, ItemStack stack, FluidStack fluidStack);
 

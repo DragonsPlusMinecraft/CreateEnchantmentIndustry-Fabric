@@ -18,7 +18,6 @@
 
 package plus.dragons.createenchantmentindustry.data;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
@@ -28,6 +27,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import net.fabricmc.fabric.api.resource.conditions.v1.ConditionJsonProvider;
+import net.fabricmc.fabric.api.resource.conditions.v1.DefaultResourceConditions;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.CachedOutput;
@@ -63,7 +64,7 @@ public class CEIDataMapProvider implements DataProvider {
 
         var experienceFuel = builder(CEIDataMaps.EXPERIENCE_FUEL);
         experienceFuel.add(
-                CEIItems.EXPERIENCE_BUCKET.getId(),
+                id(BuiltInRegistries.ITEM, CEIItems.EXPERIENCE_BUCKET.get()),
                 ExperienceFuel.normal(1000, Items.BUCKET.getDefaultInstance()));
         experienceFuel.add(CEIItems.EXPERIENCE_CAKE.getId(), ExperienceFuel.special(1000));
         experienceFuel.add(CEIItems.EXPERIENCE_CAKE_SLICE.getId(), ExperienceFuel.special(250));
@@ -98,7 +99,7 @@ public class CEIDataMapProvider implements DataProvider {
         writes.add(save(cachedOutput, builder(CEIDataMaps.PRINTING_PATTERN_INGREDIENT).add(blackDye, 100)));
         writes.add(save(cachedOutput, builder(CEIDataMaps.PRINTING_COPY_INGREDIENT).add(blackDye, 10)));
         writes.add(save(cachedOutput, builder(CEIDataMaps.PRINTING_CUSTOM_NAME_INGREDIENT)
-                .add(id(BuiltInRegistries.FLUID, CEIFluids.EXPERIENCE.get()), 10)
+                .add(id(BuiltInRegistries.FLUID, CEIFluids.EXPERIENCE.getSource()), 10)
                 .add(CDPFluids.COMMON_TAGS.dyes, 250)));
         writes.add(save(cachedOutput, builder(CEIDataMaps.PRINTING_WRITTEN_BOOK_INGREDIENT).add(blackDye, 10)));
         writes.add(save(cachedOutput, builder(CEIDataMaps.PRINTING_BANNER_PATTERN_INGREDIENT)
@@ -170,15 +171,10 @@ public class CEIDataMapProvider implements DataProvider {
         }
 
         private MapBuilder<K, V> add(ResourceLocation key, V value, String requiredMod) {
-            JsonObject condition = new JsonObject();
-            condition.addProperty("type", "forge:mod_loaded");
-            condition.addProperty("modid", requiredMod);
-            JsonArray conditions = new JsonArray();
-            conditions.add(condition);
-
             JsonObject wrapped = new JsonObject();
-            wrapped.add("forge:conditions", conditions);
-            wrapped.add("forge:value", encode(value));
+            ConditionJsonProvider.write(wrapped, DefaultResourceConditions.allModsLoaded(requiredMod));
+            wrapped.addProperty("replace", false);
+            wrapped.add("value", encode(value));
             values.add(key.toString(), wrapped);
             return this;
         }

@@ -24,13 +24,15 @@ import com.simibubi.create.content.kinetics.belt.behaviour.DirectBeltInputBehavi
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
-import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import dev.engine_room.flywheel.lib.transform.TransformStack;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import java.util.List;
 import java.util.function.Consumer;
 import net.createmod.catnip.animation.LerpedFloat;
 import net.createmod.catnip.math.AngleHelper;
 import net.createmod.catnip.math.VecHelper;
+import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
+import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleOptions;
@@ -49,7 +51,6 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createdragonsplus.common.advancements.AdvancementBehaviour;
 import plus.dragons.createdragonsplus.common.fluids.tank.ConfigurableFluidTank;
@@ -60,6 +61,7 @@ import plus.dragons.createenchantmentindustry.common.registry.CEIAdvancements;
 import plus.dragons.createenchantmentindustry.common.registry.CEIFluids;
 import plus.dragons.createenchantmentindustry.common.registry.CEIStats;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 
 public class ClassicBlazeEnchanterBlockEntity extends BlazeExperienceBlockEntity implements Clearable {
     protected static final int ENCHANTING_TIME = 200;
@@ -71,6 +73,24 @@ public class ClassicBlazeEnchanterBlockEntity extends BlazeExperienceBlockEntity
     protected AdvancementBehaviour advancement;
     protected DirectBeltInputBehaviour beltInput;
     protected @Nullable ActiveEnchanting activeEnchanting;
+    private final SnapshotParticipant<AutomationState> automationState = new SnapshotParticipant<>() {
+        @Override
+        protected AutomationState createSnapshot() {
+            return new AutomationState(heldItem.copy(), processingTime, activeEnchanting);
+        }
+
+        @Override
+        protected void readSnapshot(AutomationState snapshot) {
+            heldItem = snapshot.heldItem().copy();
+            processingTime = snapshot.processingTime();
+            activeEnchanting = snapshot.activeEnchanting();
+        }
+
+        @Override
+        protected void onFinalCommit() {
+            notifyUpdate();
+        }
+    };
     float flip;
     float oFlip;
     float flipT;
@@ -86,14 +106,18 @@ public class ClassicBlazeEnchanterBlockEntity extends BlazeExperienceBlockEntity
 
     @Override
     protected ConfigurableFluidTank createNormalTank(Consumer<FluidStack> fluidUpdateCallback) {
-        return new ConfigurableFluidTank(CEIConfig.processing().classicBlazeEnchanterFluidCapacity.get(), fluidUpdateCallback)
-                .allowInsertion(fluidStack -> fluidStack.getFluid() == CEIFluids.EXPERIENCE.get());
+        return new ConfigurableFluidTank(
+                CEIFluidUnits.millibuckets(CEIConfig.processing().classicBlazeEnchanterFluidCapacity.get()),
+                fluidUpdateCallback)
+                        .allowInsertion(fluidStack -> fluidStack.getFluid() == CEIFluids.EXPERIENCE.getSource());
     }
 
     @Override
     protected ConfigurableFluidTank createSpecialTank(Consumer<FluidStack> fluidUpdateCallback) {
-        return new ConfigurableFluidTank(CEIConfig.processing().classicBlazeEnchanterFluidCapacity.get(), fluidUpdateCallback)
-                .forbidInsertion();
+        return new ConfigurableFluidTank(
+                CEIFluidUnits.millibuckets(CEIConfig.processing().classicBlazeEnchanterFluidCapacity.get()),
+                fluidUpdateCallback)
+                        .forbidInsertion();
     }
 
     @Override
@@ -151,6 +175,35 @@ public class ClassicBlazeEnchanterBlockEntity extends BlazeExperienceBlockEntity
                 notifyUpdate();
             }
         }
+        return extracted;
+    }
+
+    public ItemStack insertAutomationItem(ItemStack stack, TransactionContext transaction) {
+        assert level != null;
+        if (!CEIConfig.features().classicBlazeEnchanter.get() || !heldItem.isEmpty())
+            return stack;
+        ItemStack input = stack.copy();
+        ItemStack inserted = input.split(1);
+        if (!enchanter.canProcess(inserted))
+            return stack;
+        automationState.updateSnapshots(transaction);
+        heldItem = inserted;
+        return input;
+    }
+
+    public ItemStack extractAutomationItem(int amount, TransactionContext transaction) {
+        assert level != null;
+        if (!CEIConfig.features().classicBlazeEnchanter.get()
+                || amount <= 0
+                || !isOutputReady())
+            return ItemStack.EMPTY;
+        automationState.updateSnapshots(transaction);
+        int extractedCount = Math.min(amount, heldItem.getCount());
+        ItemStack extracted = heldItem.copy();
+        extracted.setCount(extractedCount);
+        heldItem.shrink(extractedCount);
+        if (heldItem.isEmpty())
+            finishProcessing();
         return extracted;
     }
 
@@ -312,16 +365,6 @@ public class ClassicBlazeEnchanterBlockEntity extends BlazeExperienceBlockEntity
         }
     }
 
-    @Override
-    public @Nullable PartialModel getGogglesModel(BlazeBurnerBlock.HeatLevel heatLevel) {
-        return super.getGogglesModel(heatLevel);
-    }
-
-    @Override
-    public void tickAnimation() {
-        super.tickAnimation();
-    }
-
     protected void bookTick() {
         if (level.random.nextInt(40) == 0) {
             float oFlipT = flipT;
@@ -385,6 +428,11 @@ public class ClassicBlazeEnchanterBlockEntity extends BlazeExperienceBlockEntity
         heldItem = ItemStack.EMPTY;
         finishProcessing();
     }
+
+    private record AutomationState(
+            ItemStack heldItem,
+            int processingTime,
+            @Nullable ActiveEnchanting activeEnchanting) {}
 
     protected record ActiveEnchanting(
             ItemStack input,

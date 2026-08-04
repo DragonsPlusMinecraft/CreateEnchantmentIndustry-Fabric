@@ -34,12 +34,12 @@ import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.loading.FMLLoader;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import plus.dragons.createdragonsplus.util.ErrorMessages;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
@@ -49,6 +49,7 @@ import plus.dragons.createenchantmentindustry.common.kinetics.grindstone.Mechani
 import plus.dragons.createenchantmentindustry.common.registry.CEIBlocks;
 import plus.dragons.createenchantmentindustry.common.registry.CEIRecipes;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
+import plus.dragons.createenchantmentindustry.integration.ModIntegration;
 import plus.dragons.createenchantmentindustry.integration.jei.category.grinding.GrindingCategory;
 import plus.dragons.createenchantmentindustry.integration.jei.category.printing.*;
 
@@ -66,6 +67,7 @@ public class CEIJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(
                 new PrintingCategory(),
                 new GrindingCategory());
+        invokeZenith("registerCategories", IRecipeCategoryRegistration.class, registration);
     }
 
     @Override
@@ -105,22 +107,39 @@ public class CEIJeiPlugin implements IModPlugin {
                 .map(GrindingRecipe::fromPolishing)
                 .flatMap(Optional::stream)
                 .collect(Collectors.toList()));
+        invokeZenith("registerRecipes", IRecipeRegistration.class, registration);
     }
 
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         registration.addRecipeCatalysts(PrintingCategory.TYPE, CEIBlocks.PRINTER);
         registration.addRecipeCatalysts(GrindingCategory.TYPE, CEIBlocks.MECHANICAL_GRINDSTONE);
+        invokeZenith("registerRecipeCatalysts", IRecipeCatalystRegistration.class, registration);
     }
 
     @Internal
     public static RecipeManager getRecipeManager() {
-        if (FMLLoader.getDist() != Dist.CLIENT)
+        if (FabricLoader.getInstance().getEnvironmentType() != EnvType.CLIENT)
             throw new IllegalStateException("Retreiving recipe manager from client level is only supported for client");
         var minecraft = Minecraft.getInstance();
         Preconditions.checkNotNull(minecraft, ErrorMessages.notNull("minecraft"));
         var level = minecraft.level;
         Preconditions.checkNotNull(level, ErrorMessages.notNull("level"));
         return level.getRecipeManager();
+    }
+
+    private static void invokeZenith(String method, Class<?> parameterType, Object argument) {
+        if (!ModIntegration.APOTHIC_ENCHANTING.enabled())
+            return;
+        try {
+            Class.forName(
+                    "plus.dragons.createenchantmentindustry.integration.apothic_enchanting.integration.jei.CEIAJeiRuntime",
+                    true,
+                    CEIJeiPlugin.class.getClassLoader())
+                    .getMethod(method, parameterType)
+                    .invoke(null, argument);
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            throw new IllegalStateException("Failed to initialize Zenith JEI integration", exception);
+        }
     }
 }

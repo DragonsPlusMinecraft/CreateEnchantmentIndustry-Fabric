@@ -22,6 +22,7 @@ import com.simibubi.create.content.kinetics.base.IRotate;
 import com.simibubi.create.content.kinetics.base.KineticBlock;
 import com.simibubi.create.foundation.block.IBE;
 import dev.shadowsoffire.apotheosis.ench.api.IEnchantingBlock;
+import io.github.fabricators_of_create.porting_lib.enchant.EnchantmentBonusBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -38,7 +39,8 @@ import org.jetbrains.annotations.Nullable;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.registry.CEIABlockEntities;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.config.CEIAConfig;
 
-public class BrassBookshelfBlock extends KineticBlock implements IEnchantingBlock, IBE<BrassBookshelfBlockEntity> {
+public class BrassBookshelfBlock extends KineticBlock
+        implements IEnchantingBlock, EnchantmentBonusBlock, IBE<BrassBookshelfBlockEntity> {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
     public BrassBookshelfBlock(Properties props) {

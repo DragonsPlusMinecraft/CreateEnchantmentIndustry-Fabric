@@ -1,28 +1,30 @@
 {
-  "type": "create:filling",
-  "conditions": [
+  "fabric:load_conditions": [
     {
-      "type": "forge:mod_loaded",
-      "modid": "apotheosis"
+      "condition": "fabric:all_mods_loaded",
+      "values": [
+        "zenith"
+      ]
     },
     {
-      "type": "create_enchantment_industry:apotheosis_module",
+      "condition": "create_enchantment_industry:apotheosis_module",
       "module": "enchantment"
     }
   ],
+  "type": "create:filling",
   "ingredients": [
     {
       "item": "minecraft:glass_bottle"
     },
     {
-      "amount": 250,
+      "amount": 20250,
       "fluid": "create_enchantment_industry:infused_dragon_breath",
       "nbt": {}
     }
   ],
   "results": [
     {
-      "item": "apotheosis:infused_breath"
+      "item": "zenith:infused_breath"
     }
   ]
 }

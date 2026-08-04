@@ -26,6 +26,7 @@ import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
 import com.simibubi.create.foundation.block.IBE;
 import net.createmod.catnip.math.VoxelShaper;
+import net.fabricmc.fabric.api.entity.FakePlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
@@ -45,9 +46,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.items.IItemHandler;
 import plus.dragons.createenchantmentindustry.common.fluids.experience.ExperienceHelper;
 import plus.dragons.createenchantmentindustry.common.registry.*;
 
@@ -69,10 +67,8 @@ public class MechanicalGrindstoneBlock extends RotatedPillarKineticBlock impleme
         if (stack.isEmpty()) {
             var be = level.getBlockEntity(pos.below());
             if (be instanceof GrindstoneDrainBlockEntity drain) {
-                IItemHandler capability = drain.getCapability(ForgeCapabilities.ITEM_HANDLER, null).orElse(null);
-                if (capability != null) {
-                    ItemStack extractItem = capability
-                            .extractItem(3000, 64, false);
+                {
+                    ItemStack extractItem = drain.takeAllItems();
                     if (!extractItem.isEmpty()) {
                         player.setItemInHand(hand, extractItem);
                         if (!player.isCreative()) {

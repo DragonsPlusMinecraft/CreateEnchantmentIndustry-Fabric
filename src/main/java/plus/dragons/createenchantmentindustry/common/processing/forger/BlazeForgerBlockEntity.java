@@ -25,13 +25,15 @@ import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
 import com.simibubi.create.foundation.item.ItemHelper;
 import com.simibubi.create.foundation.utility.CreateLang;
-import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import dev.engine_room.flywheel.lib.transform.TransformStack;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import java.util.List;
 import java.util.function.Consumer;
 import net.createmod.catnip.lang.LangBuilder;
 import net.createmod.catnip.math.AngleHelper;
 import net.createmod.catnip.math.VecHelper;
+import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
+import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -48,14 +50,10 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createdragonsplus.common.advancements.AdvancementBehaviour;
 import plus.dragons.createdragonsplus.common.fluids.tank.ConfigurableFluidTank;
 import plus.dragons.createdragonsplus.util.FieldsNullabilityUnknownByDefault;
-import plus.dragons.createenchantmentindustry.client.model.CEIPartialModels;
 import plus.dragons.createenchantmentindustry.common.fluids.experience.BlazeExperienceBlockEntity;
 import plus.dragons.createenchantmentindustry.common.item.CEIItemData;
 import plus.dragons.createenchantmentindustry.common.processing.enchanter.EnchantingTemplateItem;
@@ -63,6 +61,7 @@ import plus.dragons.createenchantmentindustry.common.registry.CEIAdvancements;
 import plus.dragons.createenchantmentindustry.common.registry.CEIFluids;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
 import plus.dragons.createenchantmentindustry.util.BlazeLightningHelper;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 import plus.dragons.createenchantmentindustry.util.CEILang;
 
 @FieldsNullabilityUnknownByDefault
@@ -76,6 +75,25 @@ public class BlazeForgerBlockEntity extends BlazeExperienceBlockEntity implement
     protected BlazeForgerModeBehaviour modeSelector;
     protected AdvancementBehaviour advancement;
     protected @Nullable ActiveForging activeForging;
+    private final SnapshotParticipant<AutomationState> automationState = new SnapshotParticipant<>() {
+        @Override
+        protected AutomationState createSnapshot() {
+            return new AutomationState(processingTime, activeForging);
+        }
+
+        @Override
+        protected void readSnapshot(AutomationState snapshot) {
+            processingTime = snapshot.processingTime();
+            activeForging = snapshot.activeForging();
+            inventory.updateResult();
+        }
+
+        @Override
+        protected void onFinalCommit() {
+            inventory.updateResult();
+            notifyUpdate();
+        }
+    };
 
     public BlazeForgerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -93,27 +111,23 @@ public class BlazeForgerBlockEntity extends BlazeExperienceBlockEntity implement
 
     @Override
     protected ConfigurableFluidTank createNormalTank(Consumer<FluidStack> fluidUpdateCallback) {
-        return new ConfigurableFluidTank(CEIConfig.fluids().blazeForgerFluidCapacity.get(), fluidUpdateCallback)
-                .allowInsertion(fluidStack -> fluidStack.getFluid() == CEIFluids.EXPERIENCE.get());
+        return new ConfigurableFluidTank(
+                CEIFluidUnits.millibuckets(CEIConfig.fluids().blazeForgerFluidCapacity.get()),
+                fluidUpdateCallback)
+                        .allowInsertion(fluidStack -> fluidStack.getFluid() == CEIFluids.EXPERIENCE.getSource());
     }
 
     @Override
     protected ConfigurableFluidTank createSpecialTank(Consumer<FluidStack> fluidUpdateCallback) {
-        return new ConfigurableFluidTank(CEIConfig.fluids().blazeForgerFluidCapacity.get(), fluidUpdateCallback)
-                .forbidInsertion();
+        return new ConfigurableFluidTank(
+                CEIFluidUnits.millibuckets(CEIConfig.fluids().blazeForgerFluidCapacity.get()),
+                fluidUpdateCallback)
+                        .forbidInsertion();
     }
 
     @Override
     public boolean isActive() {
         return processingTime > 0;
-    }
-
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    protected @Nullable PartialModel getHatModel(HeatLevel heatLevel) {
-        return heatLevel.isAtLeast(HeatLevel.FADING)
-                ? CEIPartialModels.BLAZE_FORGER_HAT
-                : CEIPartialModels.BLAZE_FORGER_HAT_SMALL;
     }
 
     @Override
@@ -130,14 +144,7 @@ public class BlazeForgerBlockEntity extends BlazeExperienceBlockEntity implement
     protected void read(CompoundTag compound, boolean clientPacket) {
         super.read(compound, clientPacket);
         processingTime = compound.getInt("ProcessingTime");
-        if (compound.contains("ForgingMode", Tag.TAG_INT)) {
-            mode = BlazeForgerMode.BY_ID.apply(compound.getInt("ForgingMode"));
-        } else {
-            // TODO Remove this legacy fallback after pre-mode-panel Blaze Forger saves no longer need conversion.
-            CompoundTag inventoryTag = compound.getCompound("Inventory");
-            if (inventoryTag.contains("Mode", Tag.TAG_INT))
-                mode = BlazeForgerMode.fromLegacyOperation(inventoryTag.getInt("Mode"));
-        }
+        mode = BlazeForgerMode.BY_ID.apply(compound.getInt("ForgingMode"));
         inventory.deserializeNBT(compound.getCompound("Inventory"));
         activeForging = compound.contains("ActiveForging", Tag.TAG_COMPOUND)
                 ? ActiveForging.load(compound.getCompound("ActiveForging"))
@@ -314,7 +321,7 @@ public class BlazeForgerBlockEntity extends BlazeExperienceBlockEntity implement
     }
 
     public ItemStack extractItem(boolean simulate) {
-        for (int i = inventory.getSlots() - 1; i >= 0; i--) {
+        for (int i = inventory.getExposedSlotCount() - 1; i >= 0; i--) {
             ItemStack extracted = inventory.extractItem(i, 1, simulate);
             if (!extracted.isEmpty()) {
                 if (!simulate && i < 2) {
@@ -342,6 +349,16 @@ public class BlazeForgerBlockEntity extends BlazeExperienceBlockEntity implement
         return remainder;
     }
 
+    public ItemStack insertAutomationItem(ItemStack stack, TransactionContext transaction) {
+        if (stack.isEmpty() || inventory.hasRemainingOutput() || hasRecoverableAutomationInput())
+            return stack;
+        int slot = getAutomationInsertionSlot(stack);
+        if (slot < 0)
+            return stack;
+        automationState.updateSnapshots(transaction);
+        return inventory.insertItem(slot, stack, transaction);
+    }
+
     public ItemStack extractAutomationItem(int slot, int amount, boolean simulate) {
         if (slot < 0 || amount <= 0)
             return ItemStack.EMPTY;
@@ -356,6 +373,26 @@ public class BlazeForgerBlockEntity extends BlazeExperienceBlockEntity implement
             notifyUpdate();
         }
         return extracted;
+    }
+
+    public ItemStack extractAutomationItem(int amount, TransactionContext transaction) {
+        if (amount <= 0)
+            return ItemStack.EMPTY;
+        for (int slot = 3; slot >= 2; slot--) {
+            automationState.updateSnapshots(transaction);
+            ItemStack extracted = inventory.extractItem(slot, amount, transaction);
+            if (!extracted.isEmpty())
+                return extracted;
+        }
+        for (int slot = 1; slot >= 0; slot--) {
+            if (!isRecoverableAutomationInput(slot))
+                continue;
+            automationState.updateSnapshots(transaction);
+            ItemStack extracted = inventory.extractItem(slot, amount, transaction);
+            if (!extracted.isEmpty())
+                return extracted;
+        }
+        return ItemStack.EMPTY;
     }
 
     public int getAutomationSlotCount() {
@@ -570,6 +607,10 @@ public class BlazeForgerBlockEntity extends BlazeExperienceBlockEntity implement
         inventory.clear();
         finishProcessing();
     }
+
+    private record AutomationState(
+            int processingTime,
+            @Nullable ActiveForging activeForging) {}
 
     protected record ActiveForging(
             ItemStack firstInput,

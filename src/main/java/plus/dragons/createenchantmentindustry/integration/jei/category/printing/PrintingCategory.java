@@ -21,9 +21,11 @@ package plus.dragons.createenchantmentindustry.integration.jei.category.printing
 import static com.simibubi.create.compat.jei.category.CreateRecipeCategory.getRenderedSlot;
 
 import com.simibubi.create.compat.jei.ItemIcon;
+import com.simibubi.create.compat.jei.category.CreateRecipeCategory;
 import com.simibubi.create.foundation.gui.AllGuiTextures;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import java.util.List;
-import mezz.jei.api.forge.ForgeTypes;
+import mezz.jei.api.fabric.constants.FabricTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.ingredient.IRecipeSlotDrawable;
@@ -35,11 +37,9 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createenchantmentindustry.common.registry.CEIBlocks;
 import plus.dragons.createenchantmentindustry.common.registry.CEIRecipes;
-import plus.dragons.createenchantmentindustry.mixin.accessor.CreateRecipeCategoryAccessor;
 import plus.dragons.createenchantmentindustry.util.CEILang;
 
 public class PrintingCategory implements IRecipeCategory<PrintingRecipeJEI> {
@@ -78,7 +78,6 @@ public class PrintingCategory implements IRecipeCategory<PrintingRecipeJEI> {
         return recipe.getRegistryName();
     }
 
-    @SuppressWarnings("removal") // See CreateRecipeCategory#addPotionTooltip
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, PrintingRecipeJEI recipe, IFocusGroup focuses) {
         var base = builder.addSlot(RecipeIngredientRole.INPUT, 27, 51)
@@ -89,8 +88,7 @@ public class PrintingCategory implements IRecipeCategory<PrintingRecipeJEI> {
         recipe.setTemplate(template);
         var fluid = builder.addSlot(RecipeIngredientRole.INPUT, 27, 32)
                 .setBackground(getRenderedSlot(), -1, -1)
-                .setFluidRenderer(1, false, 16, 16)
-                .addTooltipCallback(CreateRecipeCategoryAccessor::invokeAddPotionTooltip);
+                .setFluidRenderer(1, false, 16, 16);
         recipe.setFluid(fluid);
         var output = builder.addSlot(RecipeIngredientRole.OUTPUT, 132, 51)
                 .setBackground(getRenderedSlot(), -1, -1);
@@ -111,7 +109,8 @@ public class PrintingCategory implements IRecipeCategory<PrintingRecipeJEI> {
         AllGuiTextures.JEI_SHADOW.render(graphics, 62, 57);
         AllGuiTextures.JEI_DOWN_ARROW.render(graphics, 126, 29);
         var fluid = recipeSlotsView.getSlotViews().get(2)
-                .getDisplayedIngredient(ForgeTypes.FLUID_STACK)
+                .getDisplayedIngredient(FabricTypes.FLUID_STACK)
+                .map(CreateRecipeCategory::fromJei)
                 .orElse(FluidStack.EMPTY);
         printer.withFluid(fluid).draw(graphics, getWidth() / 2 - 13, 22);
     }

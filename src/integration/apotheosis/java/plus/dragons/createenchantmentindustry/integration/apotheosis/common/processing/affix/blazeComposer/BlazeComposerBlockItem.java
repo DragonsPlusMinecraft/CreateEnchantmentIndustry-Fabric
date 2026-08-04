@@ -18,20 +18,12 @@
 
 package plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.affix.blazeComposer;
 
-import java.util.function.Consumer;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import plus.dragons.createenchantmentindustry.integration.apotheosis.client.CEIAXClient;
 
 public class BlazeComposerBlockItem extends BlockItem {
     public BlazeComposerBlockItem(Block block, Item.Properties properties) {
         super(block, properties);
-    }
-
-    @Override
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        CEIAXClient.initializeBlazeComposerItemRenderer(this, consumer);
     }
 }

@@ -27,6 +27,9 @@ import com.simibubi.create.content.schematics.requirement.ItemRequirement;
 import com.simibubi.create.foundation.block.IBE;
 import java.util.List;
 import net.createmod.catnip.data.Iterate;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
@@ -47,8 +50,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createdragonsplus.common.advancements.AdvancementBehaviour;
 import plus.dragons.createenchantmentindustry.common.registry.CEIBlockEntities;
@@ -85,17 +86,22 @@ public class GrindstoneDrainBlock extends HorizontalKineticBlock implements IBE<
         if (drain == null)
             return;
 
-        IItemHandler capability = drain.getCapability(ForgeCapabilities.ITEM_HANDLER, null).orElse(null);
+        Storage<ItemVariant> capability = drain.getItemStorage(null);
         if (capability == null)
             return;
 
-        ItemStack remainder = capability
-                .insertItem(0, itemEntity.getItem(), false);
-        if (remainder.isEmpty())
-            itemEntity.discard();
-        if (remainder.getCount() < itemEntity.getItem()
-                .getCount())
-            itemEntity.setItem(remainder);
+        ItemStack original = itemEntity.getItem();
+        long inserted;
+        try (Transaction transaction = Transaction.openOuter()) {
+            inserted = capability.insert(ItemVariant.of(original), original.getCount(), transaction);
+            if (inserted == 0)
+                return;
+            transaction.commit();
+        }
+        ItemStack remainder = original.copy();
+        remainder.shrink(Math.toIntExact(inserted));
+        if (remainder.isEmpty()) itemEntity.discard();
+        else itemEntity.setItem(remainder);
     }
 
     @Override

@@ -18,29 +18,37 @@
 
 package plus.dragons.createenchantmentindustry.integration.apothic_enchanting.config;
 
+import fuzs.forgeconfigapiport.api.config.v2.ForgeConfigRegistry;
 import net.minecraft.Util;
 import net.minecraft.util.Unit;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig.Type;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
+import plus.dragons.createenchantmentindustry.common.CEICommon;
 
 public class CEIAConfig {
     private static final CEIAClientConfig CLIENT_CONFIG = new CEIAClientConfig();
     private static final CEIAServerConfig SERVER_CONFIG = new CEIAServerConfig();
-    private static ForgeConfigSpec CLIENT_SPEC;
-    private static ForgeConfigSpec SERVER_SPEC;
+    private static final ForgeConfigSpec CLIENT_SPEC = createSpec(CLIENT_CONFIG);
+    private static final ForgeConfigSpec SERVER_SPEC = createSpec(SERVER_CONFIG);
+    private static boolean registered;
 
-    public CEIAConfig(ModLoadingContext modLoadingContext) {
-        CLIENT_SPEC = Util.make(new ForgeConfigSpec.Builder().configure(builder -> {
-            CLIENT_CONFIG.registerAll(builder);
+    private CEIAConfig() {}
+
+    private static ForgeConfigSpec createSpec(net.createmod.catnip.config.ConfigBase config) {
+        return new ForgeConfigSpec.Builder().configure(builder -> {
+            config.registerAll(builder);
             return Unit.INSTANCE;
-        }).getValue(), spec -> modLoadingContext.registerConfig(Type.CLIENT, spec, "create_enchantment_industry-apothic_enchanting-client.toml"));
-        SERVER_SPEC = Util.make(new ForgeConfigSpec.Builder().configure(builder -> {
-            SERVER_CONFIG.registerAll(builder);
-            return Unit.INSTANCE;
-        }).getValue(), spec -> modLoadingContext.registerConfig(Type.SERVER, spec, "create_enchantment_industry-apothic_enchanting-server.toml"));
+        }).getValue();
+    }
+
+    public static void register() {
+        if (registered)
+            return;
+        registered = true;
+        Util.make(CLIENT_SPEC, spec -> ForgeConfigRegistry.INSTANCE.register(
+                CEICommon.ID, Type.CLIENT, spec, "create_enchantment_industry-apothic_enchanting-client.toml"));
+        Util.make(SERVER_SPEC, spec -> ForgeConfigRegistry.INSTANCE.register(
+                CEICommon.ID, Type.SERVER, spec, "create_enchantment_industry-apothic_enchanting-server.toml"));
     }
 
     public static CEIAClientConfig client() {
@@ -49,25 +57,5 @@ public class CEIAConfig {
 
     public static CEIAServerConfig server() {
         return SERVER_CONFIG;
-    }
-
-    @SubscribeEvent
-    public void onLoad(ModConfigEvent.Loading event) {
-        var spec = event.getConfig().getSpec();
-        if (SERVER_SPEC == spec) {
-            SERVER_CONFIG.onLoad();
-        } else if (CLIENT_SPEC == spec) {
-            CLIENT_CONFIG.onLoad();
-        }
-    }
-
-    @SubscribeEvent
-    public void onReload(ModConfigEvent.Reloading event) {
-        var spec = event.getConfig().getSpec();
-        if (SERVER_SPEC == spec) {
-            SERVER_CONFIG.onReload();
-        } else if (CLIENT_SPEC == spec) {
-            CLIENT_CONFIG.onReload();
-        }
     }
 }

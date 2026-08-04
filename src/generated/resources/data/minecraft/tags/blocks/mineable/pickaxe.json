@@ -1,4 +1,5 @@
 {
+  "replace": false,
   "values": [
     "create_enchantment_industry:mechanical_grindstone",
     "create_enchantment_industry:grindstone_drain",

@@ -2,12 +2,12 @@
   "required": true,
   "priority": 1100,
   "package": "plus.dragons.createenchantmentindustry.integration.apothic_enchanting.mixin",
-  "plugin": "plus.dragons.createdragonsplus.mixin.CDPMixinConfigPlugin",
-  "refmap": "create_enchantment_industry.apothic_enchanting.refmap.json",
+  "plugin": "plus.dragons.createenchantmentindustry.mixin.CEIRestrictiveMixinConfigPlugin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
     "create.BasinBlockEntityMixin",
-    "create.BasinBlockMixin"
+    "create.BasinBlockMixin",
+    "zenith.EnchantmentCategoryMixin"
   ],
   "client": [],
   "injectors": {

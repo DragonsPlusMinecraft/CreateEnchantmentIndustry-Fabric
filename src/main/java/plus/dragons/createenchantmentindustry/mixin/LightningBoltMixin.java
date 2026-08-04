@@ -18,6 +18,7 @@
 
 package plus.dragons.createenchantmentindustry.mixin;
 
+import io.github.fabricators_of_create.porting_lib.entity.extensions.EntityExtensions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -43,7 +44,8 @@ public abstract class LightningBoltMixin extends Entity {
 
     @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LightningBolt;clearCopperOnLightningStrike(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;)V"))
     private void tick$chargeExperienceOnLightingStrike(CallbackInfo ci) {
-        if (!this.getPersistentData().getBoolean(BlazeExperienceBlockEntity.LIGHTNING_BOLT_EXPERIENCE_CHARGE_KEY))
+        if (!((EntityExtensions) this).getCustomData()
+                .getBoolean(BlazeExperienceBlockEntity.LIGHTNING_BOLT_EXPERIENCE_CHARGE_KEY))
             if (this.random.nextFloat() > CEIConfig.processing().regularLightningStrikeTransformXpBlockChance.get())
                 return;
         ExperienceLightningCharger.charge(this.level(), this.getStrikePosition());

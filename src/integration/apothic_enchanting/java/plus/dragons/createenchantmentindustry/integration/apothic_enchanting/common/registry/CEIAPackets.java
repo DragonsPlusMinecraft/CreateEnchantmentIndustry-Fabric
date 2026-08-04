@@ -18,10 +18,6 @@
 
 package plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.registry;
 
-import net.minecraftforge.network.NetworkDirection;
-import plus.dragons.createenchantmentindustry.common.network.CEINetwork;
-import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.contraptions.actors.enderWovenBag.ContraptionEnderWovenBagPocketChangePacket;
-
 public final class CEIAPackets {
     private static boolean registered;
 
@@ -32,12 +28,6 @@ public final class CEIAPackets {
             return;
         }
         registered = true;
-        CEINetwork.registerMessage(
-                CEINetwork.CONTRAPTION_ENDER_WOVEN_BAG_PACKET_ID,
-                ContraptionEnderWovenBagPocketChangePacket.class,
-                ContraptionEnderWovenBagPocketChangePacket::encode,
-                ContraptionEnderWovenBagPocketChangePacket::decode,
-                ContraptionEnderWovenBagPocketChangePacket::handle,
-                NetworkDirection.PLAY_TO_CLIENT);
+        // The S2C receiver lives in CEIAClient so dedicated servers never resolve client classes.
     }
 }

@@ -23,34 +23,53 @@ import static plus.dragons.createenchantmentindustry.integration.apothic_enchant
 import com.simibubi.create.AllTags;
 import com.tterrag.registrate.providers.RegistrateTagsProvider;
 import com.tterrag.registrate.util.entry.FluidEntry;
-import net.createmod.catnip.theme.Color;
+import io.github.fabricators_of_create.porting_lib.fluids.PortingLibFluids;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fluids.ForgeFlowingFluid;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
-import plus.dragons.createdragonsplus.common.fluids.SolidRenderFluidType;
+import plus.dragons.createdragonsplus.common.fluids.TypedFlowableFluid;
 import plus.dragons.createdragonsplus.data.tag.IntrinsicTagRegistry;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
+import plus.dragons.createenchantmentindustry.integration.apotheosis.common.fluids.EssenceFluidType;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.CEIACommon;
 
 public class CEIAXFluids {
     public static final ModTags MOD_TAGS = new ModTags();
-    public static final FluidEntry<ForgeFlowingFluid.Source> APOTHEOTIC_ESSENCE = new FluidEntry<>(REGISTRATE,
-            RegistryObject.create(REGISTRATE.asResource("apotheotic_essence"), ForgeRegistries.FLUIDS));
-    public static final FluidEntry<ForgeFlowingFluid.Flowing> APOTHEOTIC_ESSENCE_FLOWING = REGISTRATE
-            .fluid("apotheotic_essence", SolidRenderFluidType.create(new Color(0xf56f22).asVectorF(), () -> 1f)) // TODO need adjust
-            .properties(builder -> builder
-                    .rarity(Rarity.EPIC)
-                    .lightLevel(15)
-                    .pathType(BlockPathTypes.BLOCKED)
-                    .adjacentPathType(BlockPathTypes.BLOCKED))
-            .fluidProperties(p -> p.levelDecreasePerBlock(2).explosionResistance(100f))
-            .source(ForgeFlowingFluid.Source::new)
+    private static final ResourceLocation APOTHEOTIC_ESSENCE_ID = CEICommon.asResource("apotheotic_essence");
+    private static final ResourceLocation APOTHEOTIC_ESSENCE_STILL = CEICommon.asResource(
+            "fluid/apotheotic_essence_still");
+    private static final ResourceLocation APOTHEOTIC_ESSENCE_FLOW = CEICommon.asResource(
+            "fluid/apotheotic_essence_flow");
+    private static final ResourceLocation CRYSTAL_ESSENCE_ID = CEICommon.asResource("crystal_essence");
+    private static final ResourceLocation CRYSTAL_ESSENCE_STILL = CEICommon.asResource("fluid/crystal_essence_still");
+    private static final ResourceLocation CRYSTAL_ESSENCE_FLOW = CEICommon.asResource("fluid/crystal_essence_flow");
+    public static final EssenceFluidType APOTHEOTIC_ESSENCE_TYPE = EssenceFluidType.create(
+            APOTHEOTIC_ESSENCE_ID,
+            APOTHEOTIC_ESSENCE_STILL,
+            APOTHEOTIC_ESSENCE_FLOW,
+            0xF56F22,
+            Rarity.EPIC,
+            15);
+    public static final EssenceFluidType CRYSTAL_ESSENCE_TYPE = EssenceFluidType.create(
+            CRYSTAL_ESSENCE_ID,
+            CRYSTAL_ESSENCE_STILL,
+            CRYSTAL_ESSENCE_FLOW,
+            0x8778FA,
+            Rarity.RARE,
+            8);
+
+    public static final FluidEntry<TypedFlowableFluid.Flowing> APOTHEOTIC_ESSENCE = REGISTRATE
+            .fluid(
+                    "apotheotic_essence",
+                    APOTHEOTIC_ESSENCE_STILL,
+                    APOTHEOTIC_ESSENCE_FLOW,
+                    properties -> new TypedFlowableFluid.Flowing(properties, APOTHEOTIC_ESSENCE_TYPE))
+            .fluidAttributes(() -> APOTHEOTIC_ESSENCE_TYPE)
+            .fluidProperties(p -> p.levelDecreasePerBlock(2).blastResistance(100f))
+            .source(properties -> new TypedFlowableFluid.Source(properties, APOTHEOTIC_ESSENCE_TYPE))
             .block()
             .properties(properties -> properties
                     .lightLevel((b) -> 15))
@@ -60,18 +79,17 @@ public class CEIAXFluids {
                     .rarity(Rarity.EPIC))
             .build()
             .register();
+    public static final FluidEntry<TypedFlowableFluid.Flowing> APOTHEOTIC_ESSENCE_FLOWING = APOTHEOTIC_ESSENCE;
 
-    public static final FluidEntry<ForgeFlowingFluid.Source> CRYSTAL_ESSENCE = new FluidEntry<>(REGISTRATE,
-            RegistryObject.create(REGISTRATE.asResource("crystal_essence"), ForgeRegistries.FLUIDS));
-    public static final FluidEntry<ForgeFlowingFluid.Flowing> CRYSTAL_ESSENCE_FLOWING = REGISTRATE
-            .fluid("crystal_essence", SolidRenderFluidType.create(new Color(0x8778fa).asVectorF(), () -> 1f)) // TODO need adjust
-            .properties(builder -> builder
-                    .rarity(Rarity.RARE)
-                    .lightLevel(8)
-                    .pathType(BlockPathTypes.BLOCKED)
-                    .adjacentPathType(BlockPathTypes.BLOCKED))
-            .fluidProperties(p -> p.levelDecreasePerBlock(2).explosionResistance(100f))
-            .source(ForgeFlowingFluid.Source::new)
+    public static final FluidEntry<TypedFlowableFluid.Flowing> CRYSTAL_ESSENCE = REGISTRATE
+            .fluid(
+                    "crystal_essence",
+                    CRYSTAL_ESSENCE_STILL,
+                    CRYSTAL_ESSENCE_FLOW,
+                    properties -> new TypedFlowableFluid.Flowing(properties, CRYSTAL_ESSENCE_TYPE))
+            .fluidAttributes(() -> CRYSTAL_ESSENCE_TYPE)
+            .fluidProperties(p -> p.levelDecreasePerBlock(2).blastResistance(100f))
+            .source(properties -> new TypedFlowableFluid.Source(properties, CRYSTAL_ESSENCE_TYPE))
             .block()
             .properties(properties -> properties
                     .lightLevel((b) -> 8))
@@ -81,11 +99,15 @@ public class CEIAXFluids {
                     .rarity(Rarity.RARE))
             .build()
             .register();
+    public static final FluidEntry<TypedFlowableFluid.Flowing> CRYSTAL_ESSENCE_FLOWING = CRYSTAL_ESSENCE;
 
-    public static void register(IEventBus modBus) {
-        // modBus.register(CEIAXFluids.class);  // TODO Highly WIP, fluid interaction, dispenser behavior, pipe interaction, open end pipe effect...
+    public static void register() {
         REGISTRATE.registerFluidTags(MOD_TAGS);
+        Registry.register(PortingLibFluids.FLUID_TYPES, APOTHEOTIC_ESSENCE_ID, APOTHEOTIC_ESSENCE_TYPE);
+        Registry.register(PortingLibFluids.FLUID_TYPES, CRYSTAL_ESSENCE_ID, CRYSTAL_ESSENCE_TYPE);
     }
+
+    public static void initialize() {}
 
     public static class ModTags extends IntrinsicTagRegistry<Fluid, RegistrateTagsProvider.IntrinsicImpl<Fluid>> {
         public final TagKey<Fluid> fanSalvagingCatalysts = tag("fan_processing_catalysts/salvaging", "Bulk Salvaging Catalysts");

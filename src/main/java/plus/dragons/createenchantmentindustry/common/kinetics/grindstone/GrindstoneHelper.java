@@ -30,39 +30,31 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.GrindstoneEvent;
 import plus.dragons.createenchantmentindustry.common.item.CEIItemData;
 import plus.dragons.createenchantmentindustry.common.registry.CEIRecipes;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 
 public class GrindstoneHelper {
     public static boolean canItemBeGrinded(ItemStack top, ItemStack bottom) {
-        var event = new GrindstoneEvent.OnPlaceItem(top, bottom, -1);
-        if (MinecraftForge.EVENT_BUS.post(event))
-            return false;
-        if (!event.getOutput().isEmpty())
-            return true;
         return !computeResult(top, bottom).isEmpty();
     }
 
     public static Optional<Result> grindItem(Level level, ItemStack top, ItemStack bottom) {
-        var place = new GrindstoneEvent.OnPlaceItem(top, bottom, -1);
-        if (MinecraftForge.EVENT_BUS.post(place))
+        ItemStack output = computeResult(top, bottom);
+        if (output.isEmpty())
             return Optional.empty();
-        int experience = place.getXp();
-        var output = place.getOutput();
-        if (output.isEmpty()) {
-            output = computeResult(top, bottom);
-            if (output.isEmpty())
-                return Optional.empty();
-            if (experience == -1) {
-                experience = getGrindingExperience(level, top, bottom);
-            }
-        }
-        var take = new GrindstoneEvent.OnTakeItem(top, bottom, experience);
-        if (MinecraftForge.EVENT_BUS.post(take))
-            return Optional.empty();
-        return Optional.of(new Result(take.getNewTopItem(), take.getNewBottomItem(), output, Math.max(take.getXp(), 0)));
+        int experience = getGrindingExperience(level, top, bottom);
+        ItemStack remainingTop = consumeOne(top);
+        ItemStack remainingBottom = consumeOne(bottom);
+        return Optional.of(new Result(remainingTop, remainingBottom, output, experience));
+    }
+
+    private static ItemStack consumeOne(ItemStack input) {
+        if (input.isEmpty())
+            return ItemStack.EMPTY;
+        ItemStack remaining = input.copy();
+        remaining.shrink(1);
+        return remaining;
     }
 
     private static int getGrindingExperience(Level level, ItemStack top, ItemStack bottom) {
@@ -98,7 +90,7 @@ public class GrindstoneHelper {
         if (grinding.isEmpty()) return 0;
         var f = grinding.get().getFluidResults();
         if (f.isEmpty()) return 0;
-        return f.get(0).getAmount();
+        return Math.toIntExact(CEIFluidUnits.toMillibuckets(f.get(0).getAmount()));
     }
 
     private static ItemStack computeResult(ItemStack top, ItemStack bottom) {
@@ -129,7 +121,7 @@ public class GrindstoneHelper {
             int bottomDurability = bottom.getMaxDamage() - bottom.getDamageValue();
             int l = topDurability + bottomDurability + maxDamage * 5 / 100;
             int count = 1;
-            if (!top.isDamageableItem() || !top.isRepairable()) {
+            if (!top.isDamageableItem()) {
                 if (top.getMaxStackSize() < 2 || !ItemStack.matches(top, bottom)) {
                     return ItemStack.EMPTY;
                 }
@@ -141,7 +133,7 @@ public class GrindstoneHelper {
             result.setCount(count);
             if (result.isDamageableItem()) {
                 result.setDamageValue(Math.max(maxDamage - l, 0));
-                if (!bottom.isRepairable())
+                if (!bottom.isDamageableItem())
                     result.setDamageValue(top.getDamageValue());
             }
 

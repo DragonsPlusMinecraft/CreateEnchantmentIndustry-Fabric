@@ -33,8 +33,11 @@ import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour
 import com.simibubi.create.foundation.blockEntity.behaviour.CenteredSideValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import java.util.List;
 import net.createmod.catnip.math.VecHelper;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -47,10 +50,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createdragonsplus.common.advancements.AdvancementBehaviour;
 import plus.dragons.createdragonsplus.util.FieldsNullabilityUnknownByDefault;
@@ -58,10 +57,10 @@ import plus.dragons.createenchantmentindustry.common.fluids.printer.behaviour.Ad
 import plus.dragons.createenchantmentindustry.common.fluids.printer.behaviour.CustomNamePrintingBehaviour;
 import plus.dragons.createenchantmentindustry.common.fluids.printer.behaviour.PackagePatternPrintingBehaviour;
 import plus.dragons.createenchantmentindustry.common.fluids.printer.behaviour.PrintingBehaviour;
-import plus.dragons.createenchantmentindustry.common.migration.LegacyBlockEntityData;
 import plus.dragons.createenchantmentindustry.common.registry.CEIAdvancements;
 import plus.dragons.createenchantmentindustry.common.registry.CEIStats;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 
 @FieldsNullabilityUnknownByDefault
 public class PrinterBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation {
@@ -79,7 +78,9 @@ public class PrinterBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
-        tank = SmartFluidTankBehaviour.single(this, CEIConfig.fluids().printerFluidCapacity.get());
+        tank = SmartFluidTankBehaviour.single(
+                this,
+                CEIFluidUnits.millibuckets(CEIConfig.fluids().printerFluidCapacity.get()));
         printer = new PrinterBehaviour(this, tank, new CenteredSideValueBoxTransform(
                 (state, direction) -> state.getValue(PrinterBlock.FACING) == direction));
         BeltProcessingBehaviour processing = new BeltProcessingBehaviour(this)
@@ -92,11 +93,8 @@ public class PrinterBlockEntity extends SmartBlockEntity implements IHaveGoggleI
         behaviours.add(advancement);
     }
 
-    @Override
-    public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction side) {
-        if (capability == ForgeCapabilities.FLUID_HANDLER && tank != null && side != Direction.DOWN)
-            return tank.getCapability().cast();
-        return super.getCapability(capability, side);
+    public @Nullable Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
+        return tank != null && side != Direction.DOWN ? tank.getCapability() : null;
     }
 
     private FluidStack getFluidInTank() {
@@ -259,7 +257,6 @@ public class PrinterBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 
     @Override
     protected void read(CompoundTag tag, boolean clientPacket) {
-        tag = LegacyBlockEntityData.migratePrinter(tag);
         super.read(tag, clientPacket);
         processingTicks = tag.getInt("ProcessingTicks");
         activePrinting = tag.contains("ActivePrinting", Tag.TAG_COMPOUND)
@@ -285,7 +282,7 @@ public class PrinterBlockEntity extends SmartBlockEntity implements IHaveGoggleI
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         assert level != null;
-        boolean added = containedFluidTooltip(tooltip, isPlayerSneaking, tank.getCapability().cast());
+        boolean added = containedFluidTooltip(tooltip, isPlayerSneaking, tank.getCapability());
         added |= printer.getPrintingBehaviour().addToGoggleTooltip(tooltip, isPlayerSneaking);
         return added;
     }
@@ -308,7 +305,7 @@ public class PrinterBlockEntity extends SmartBlockEntity implements IHaveGoggleI
             FluidStack fluid,
             ItemStack result,
             int requiredItemCount,
-            int requiredFluidAmount) {
+            long requiredFluidAmount) {
         CompoundTag save() {
             CompoundTag tag = new CompoundTag();
             tag.put("Input", input.save(new CompoundTag()));
@@ -316,7 +313,7 @@ public class PrinterBlockEntity extends SmartBlockEntity implements IHaveGoggleI
             tag.put("Fluid", fluid.writeToNBT(new CompoundTag()));
             tag.put("Result", result.save(new CompoundTag()));
             tag.putInt("RequiredItemCount", requiredItemCount);
-            tag.putInt("RequiredFluidAmount", requiredFluidAmount);
+            tag.putLong("RequiredFluidAmount", requiredFluidAmount);
             return tag;
         }
 
@@ -326,7 +323,7 @@ public class PrinterBlockEntity extends SmartBlockEntity implements IHaveGoggleI
             FluidStack fluid = FluidStack.loadFluidStackFromNBT(tag.getCompound("Fluid"));
             ItemStack result = ItemStack.of(tag.getCompound("Result"));
             int requiredItemCount = tag.getInt("RequiredItemCount");
-            int requiredFluidAmount = tag.getInt("RequiredFluidAmount");
+            long requiredFluidAmount = tag.getLong("RequiredFluidAmount");
             if (input.isEmpty()
                     || template.isEmpty()
                     || fluid.isEmpty()

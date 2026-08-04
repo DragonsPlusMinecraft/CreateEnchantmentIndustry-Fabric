@@ -34,8 +34,8 @@ import plus.dragons.createenchantmentindustry.integration.apotheosis.common.proc
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.CEIACommon;
 
 public class CEIAXItems {
-    private static final TagKey<Item> FORGE_BUCKETS = TagKey.create(
-            Registries.ITEM, new ResourceLocation("forge", "buckets"));
+    private static final TagKey<Item> COMMON_BUCKETS = TagKey.create(
+            Registries.ITEM, new ResourceLocation("c", "buckets"));
     public static final ModTags MOD_TAGS = new ModTags();
 
     public static final ItemEntry<SequencedAssemblyItem> INCOMPLETE_BRASS_AFFIX_TEMPLATE = REGISTRATE
@@ -83,9 +83,9 @@ public class CEIAXItems {
 
         public ModTags() {
             super(CEIACommon.ID);
-            addOptional(FORGE_BUCKETS, CEICommon.asResource("apotheotic_essence_bucket"));
-            addOptional(FORGE_BUCKETS, CEICommon.asResource("crystal_essence_bucket"));
-            addOptional(blazeComposerSuperActivators, new ResourceLocation("apotheosis", "mythic_material"));
+            addOptional(COMMON_BUCKETS, CEICommon.asResource("apotheotic_essence_bucket"));
+            addOptional(COMMON_BUCKETS, CEICommon.asResource("crystal_essence_bucket"));
+            addOptional(blazeComposerSuperActivators, new ResourceLocation("zenith", "mythic_material"));
             addOptionalBlockDrop("gem_cutter");
             addOptionalBlockDrop("affix_augmentor");
             addOptionalBlockDrop("blaze_composer");

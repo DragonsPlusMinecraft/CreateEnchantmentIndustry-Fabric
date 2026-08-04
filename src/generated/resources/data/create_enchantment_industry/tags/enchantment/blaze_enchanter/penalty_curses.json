@@ -1,19 +1,20 @@
 {
+  "replace": false,
   "values": [
+    {
+      "id": "zenith:berserkers_fury",
+      "required": false
+    },
     {
       "id": "minecraft:binding_curse",
       "required": false
     },
     {
+      "id": "zenith:life_mending",
+      "required": false
+    },
+    {
       "id": "minecraft:vanishing_curse",
-      "required": false
-    },
-    {
-      "id": "apotheosis:berserkers_fury",
-      "required": false
-    },
-    {
-      "id": "apotheosis:life_mending",
       "required": false
     }
   ]

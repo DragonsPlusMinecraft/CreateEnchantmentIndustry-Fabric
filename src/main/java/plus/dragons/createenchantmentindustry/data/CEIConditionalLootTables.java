@@ -21,27 +21,26 @@ package plus.dragons.createenchantmentindustry.data;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.util.concurrent.CompletableFuture;
+import net.fabricmc.fabric.api.resource.conditions.v1.ConditionJsonProvider;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.common.crafting.conditions.ICondition;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
 
 public final class CEIConditionalLootTables {
     private CEIConditionalLootTables() {}
 
-    public static JsonObject selfDroppingBlock(ResourceLocation block, HolderLookup.Provider registries, ICondition condition) {
+    public static JsonObject selfDroppingBlock(ResourceLocation block, HolderLookup.Provider registries, ConditionJsonProvider condition) {
         return block(block, itemEntry(block), registries, condition);
     }
 
-    public static JsonObject block(ResourceLocation block, JsonObject entry, HolderLookup.Provider registries, ICondition condition) {
+    public static JsonObject block(ResourceLocation block, JsonObject entry, HolderLookup.Provider registries, ConditionJsonProvider condition) {
         var table = new JsonObject();
         table.addProperty("type", "minecraft:block");
         table.add("pools", pools(entry));
-        // The block remains registered when its feature is disabled, so its recovery loot table must
-        // remain available as well. Forge 1.20.1 has no general conditional loot-table wrapper.
+        ConditionJsonProvider.write(table, condition);
         return table;
     }
 

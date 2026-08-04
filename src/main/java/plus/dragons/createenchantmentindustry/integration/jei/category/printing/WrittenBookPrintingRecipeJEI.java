@@ -43,7 +43,7 @@ public enum WrittenBookPrintingRecipeJEI implements PrintingRecipeJEI {
 
     @Override
     public void setFluid(IRecipeSlotBuilder slot) {
-        CEIDataMaps.getSourceFluidEntries(CEIDataMaps.PRINTING_WRITTEN_BOOK_INGREDIENT)
+        CEIDataMaps.getSourceFluidAmountEntries(CEIDataMaps.PRINTING_WRITTEN_BOOK_INGREDIENT)
                 .forEach(Pairs.accept(slot::addFluidStack));
     }
 

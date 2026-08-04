@@ -18,13 +18,13 @@
 
 package plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.contraptions.actors.enderWovenBag;
 
-import java.util.function.Supplier;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.client.contraptions.actors.enderWovenBag.EnderWovenBagClientPacketHandler;
+import net.minecraft.world.entity.Entity;
+import plus.dragons.createenchantmentindustry.common.network.CEINetwork;
 
 public record ContraptionEnderWovenBagPocketChangePacket(int entityId, BlockPos localPos, boolean open) {
     public static void encode(ContraptionEnderWovenBagPocketChangePacket packet, FriendlyByteBuf buffer) {
@@ -38,11 +38,11 @@ public record ContraptionEnderWovenBagPocketChangePacket(int entityId, BlockPos 
                 buffer.readVarInt(), buffer.readBlockPos(), buffer.readBoolean());
     }
 
-    public static void handle(
-            ContraptionEnderWovenBagPocketChangePacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(
-                Dist.CLIENT, () -> () -> EnderWovenBagClientPacketHandler.handle(packet)));
-        context.setPacketHandled(true);
+    public static void sendToTracking(Entity entity, ContraptionEnderWovenBagPocketChangePacket packet) {
+        for (var player : PlayerLookup.tracking(entity)) {
+            FriendlyByteBuf buffer = PacketByteBufs.create();
+            encode(packet, buffer);
+            ServerPlayNetworking.send(player, CEINetwork.ENDER_WOVEN_BAG_TRACKING, buffer);
+        }
     }
 }

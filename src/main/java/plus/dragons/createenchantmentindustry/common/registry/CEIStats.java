@@ -22,7 +22,6 @@ import static plus.dragons.createenchantmentindustry.common.CEICommon.REGISTRATE
 
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.eventbus.api.IEventBus;
 import plus.dragons.createdragonsplus.common.CDPRegistrate;
 import plus.dragons.createdragonsplus.common.registrate.builder.CustomStatBuilder;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
@@ -56,5 +55,5 @@ public class CEIStats {
         return REGISTRATE.customStat(id, () -> CEICommon.asResource(id));
     }
 
-    public static void register(IEventBus modBus) {}
+    public static void register() {}
 }

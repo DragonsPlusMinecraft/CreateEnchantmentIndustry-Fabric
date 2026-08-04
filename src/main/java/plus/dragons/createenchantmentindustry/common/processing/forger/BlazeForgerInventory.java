@@ -18,21 +18,23 @@
 
 package plus.dragons.createenchantmentindustry.common.processing.forger;
 
+import io.github.fabricators_of_create.porting_lib.transfer.item.ItemStackHandler;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraftforge.items.ItemStackHandler;
 import plus.dragons.createenchantmentindustry.common.fluids.experience.ExperienceHelper;
 import plus.dragons.createenchantmentindustry.common.item.CEIItemData;
 import plus.dragons.createenchantmentindustry.common.processing.EnchantmentProcessingRules;
@@ -44,6 +46,7 @@ import plus.dragons.createenchantmentindustry.config.CEIConfig;
 
 public class BlazeForgerInventory extends ItemStackHandler {
     private final BlazeForgerBlockEntity forger;
+    private boolean suppressCallbacks;
     private int cost;
     private BlazeForgerMode operation;
     private boolean conflicting;
@@ -63,18 +66,79 @@ public class BlazeForgerInventory extends ItemStackHandler {
         return 1;
     }
 
-    @Override
-    public int getSlots() {
+    public int getExposedSlotCount() {
         return 4;
     }
 
     @Override
+    public boolean isItemValid(int slot, ItemVariant resource, int count) {
+        return slot >= 0 && slot < 2 && !hasRemainingOutput();
+    }
+
     public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-        if (slot > 1)
+        validateSlotIndex(slot);
+        if (slot > 1 || stack.isEmpty())
             return stack;
         if (hasRemainingOutput())
             return stack;
-        return super.insertItem(slot, stack, simulate);
+        try (Transaction transaction = Transaction.openOuter()) {
+            ItemStack remainder = insertItem(slot, stack, transaction);
+            if (!simulate)
+                transaction.commit();
+            return remainder;
+        }
+    }
+
+    public ItemStack insertItem(int slot, ItemStack stack, TransactionContext transaction) {
+        validateSlotIndex(slot);
+        if (slot > 1 || stack.isEmpty() || hasRemainingOutput())
+            return stack;
+        long inserted = getSlot(slot).insert(ItemVariant.of(stack), stack.getCount(), transaction);
+        ItemStack remainder = stack.copy();
+        remainder.shrink(Math.toIntExact(inserted));
+        return remainder;
+    }
+
+    public ItemStack extractItem(int slot, int amount, boolean simulate) {
+        validateSlotIndex(slot);
+        if (amount <= 0)
+            return ItemStack.EMPTY;
+        ItemStack stored = getStackInSlot(slot);
+        if (stored.isEmpty())
+            return ItemStack.EMPTY;
+        try (Transaction transaction = Transaction.openOuter()) {
+            ItemStack result = extractItem(slot, amount, transaction);
+            if (!simulate)
+                transaction.commit();
+            return result;
+        }
+    }
+
+    public ItemStack extractItem(int slot, int amount, TransactionContext transaction) {
+        validateSlotIndex(slot);
+        if (amount <= 0)
+            return ItemStack.EMPTY;
+        ItemStack stored = getStackInSlot(slot);
+        if (stored.isEmpty())
+            return ItemStack.EMPTY;
+        long extracted = getSlot(slot).extract(ItemVariant.of(stored), amount, transaction);
+        ItemStack result = stored.copy();
+        result.setCount(Math.toIntExact(extracted));
+        return result;
+    }
+
+    private void validateSlotIndex(int slot) {
+        if (slot < 0 || slot >= getSlotCount())
+            throw new IndexOutOfBoundsException("Slot " + slot + " not in valid range [0," + getSlotCount() + ")");
+    }
+
+    private void setInternal(int slot, ItemStack stack) {
+        suppressCallbacks = true;
+        try {
+            setStackInSlot(slot, stack);
+        } finally {
+            suppressCallbacks = false;
+        }
     }
 
     @Override
@@ -86,6 +150,8 @@ public class BlazeForgerInventory extends ItemStackHandler {
 
     @Override
     protected void onContentsChanged(int slot) {
+        if (suppressCallbacks)
+            return;
         if (slot == 0 || slot == 1)
             updateResult();
         forger.notifyUpdate();
@@ -95,12 +161,7 @@ public class BlazeForgerInventory extends ItemStackHandler {
     public void deserializeNBT(CompoundTag nbt) {
         super.deserializeNBT(nbt);
         cost = nbt.getInt("Cost");
-        if (nbt.contains("Operation", Tag.TAG_INT)) {
-            operation = BlazeForgerMode.BY_ID.apply(nbt.getInt("Operation"));
-        } else {
-            // TODO Remove this legacy fallback after pre-mode-panel Blaze Forger inventory data is no longer supported.
-            operation = BlazeForgerMode.fromLegacyOperation(nbt.getInt("Mode"));
-        }
+        operation = BlazeForgerMode.BY_ID.apply(nbt.getInt("Operation"));
         conflicting = nbt.getBoolean("Conflicting");
         overCap = nbt.getBoolean("OverCap");
         updateResult();
@@ -121,7 +182,7 @@ public class BlazeForgerInventory extends ItemStackHandler {
     }
 
     public boolean hasRemainingOutput() {
-        return !stacks.get(2).isEmpty() || !stacks.get(3).isEmpty();
+        return !getStackInSlot(2).isEmpty() || !getStackInSlot(3).isEmpty();
     }
 
     protected int getExperienceCost() {
@@ -130,11 +191,11 @@ public class BlazeForgerInventory extends ItemStackHandler {
 
     protected ItemStack extractInput(int slot, boolean simulate) {
         validateSlotIndex(slot);
-        ItemStack stack = stacks.get(slot);
+        ItemStack stack = getStackInSlot(slot);
         if (stack.isEmpty())
             return ItemStack.EMPTY;
         if (!simulate)
-            setStackInSlot(slot, ItemStack.EMPTY);
+            setInternal(slot, ItemStack.EMPTY);
         return stack.copy();
     }
 
@@ -142,21 +203,21 @@ public class BlazeForgerInventory extends ItemStackHandler {
         if (slot < 0 || slot >= 2) {
             throw new RuntimeException("Slot " + slot + " not in valid range - [0,2)");
         }
-        return stacks.get(slot + 4);
+        return getStackInSlot(slot + 4);
     }
 
     protected void clearInput() {
-        stacks.set(0, ItemStack.EMPTY);
-        stacks.set(1, ItemStack.EMPTY);
-        stacks.set(4, ItemStack.EMPTY);
-        stacks.set(5, ItemStack.EMPTY);
+        setInternal(0, ItemStack.EMPTY);
+        setInternal(1, ItemStack.EMPTY);
+        setInternal(4, ItemStack.EMPTY);
+        setInternal(5, ItemStack.EMPTY);
         cost = 0;
         result = Result.emptyInput();
     }
 
     protected void clear() {
-        for (int i = 0; i < stacks.size(); i++) {
-            stacks.set(i, ItemStack.EMPTY);
+        for (int i = 0; i < getSlotCount(); i++) {
+            setInternal(i, ItemStack.EMPTY);
         }
         cost = 0;
         result = Result.emptyInput();
@@ -171,8 +232,8 @@ public class BlazeForgerInventory extends ItemStackHandler {
             boolean completedSpecial) {
         if (primaryOutput.isEmpty() && secondaryOutput.isEmpty())
             return;
-        stacks.set(2, primaryOutput.copy());
-        stacks.set(3, secondaryOutput.copy());
+        setInternal(2, primaryOutput.copy());
+        setInternal(3, secondaryOutput.copy());
         clearInput();
 
         forger.advancement.awardStat(CEIStats.FORGE.get(), 1);
@@ -191,17 +252,17 @@ public class BlazeForgerInventory extends ItemStackHandler {
     }
 
     protected void updateResult() {
-        stacks.set(4, ItemStack.EMPTY);
-        stacks.set(5, ItemStack.EMPTY);
-        result = calculateResult(stacks.get(0), stacks.get(1));
+        setInternal(4, ItemStack.EMPTY);
+        setInternal(5, ItemStack.EMPTY);
+        result = calculateResult(getStackInSlot(0), getStackInSlot(1));
         cost = result.valid() ? result.levelCost() : 0;
         operation = result.operation();
         conflicting = result.conflicting();
         overCap = result.overCap();
         if (!result.valid())
             return;
-        stacks.set(4, result.primaryOutput().copy());
-        stacks.set(5, result.secondaryOutput().copy());
+        setInternal(4, result.primaryOutput().copy());
+        setInternal(5, result.secondaryOutput().copy());
     }
 
     private Result calculateResult(ItemStack baseInput, ItemStack additionInput) {
@@ -375,7 +436,7 @@ public class BlazeForgerInventory extends ItemStackHandler {
             int baseLevel = resultEnchantments.getOrDefault(enchantment, 0);
             int additionLevel = entry.getValue();
             int resultLevel = baseLevel == additionLevel ? additionLevel + 1 : Math.max(additionLevel, baseLevel);
-            if (!enchantment.canApplyAtEnchantingTable(base)) {
+            if (!CEIEnchantmentHelper.canApplyAtEnchantingTable(enchantment, base)) {
                 rejected.add(RejectedEnchantment.of(enchantment, additionLevel, RejectionReason.CANNOT_APPLY_TO_ITEM.message(base.getHoverName())));
                 continue;
             }

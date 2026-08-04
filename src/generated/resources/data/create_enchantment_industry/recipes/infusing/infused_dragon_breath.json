@@ -1,25 +1,27 @@
 {
-  "type": "create_enchantment_industry:infusing",
-  "conditions": [
+  "fabric:load_conditions": [
     {
-      "type": "forge:mod_loaded",
-      "modid": "apotheosis"
+      "condition": "fabric:all_mods_loaded",
+      "values": [
+        "zenith"
+      ]
     },
     {
-      "type": "create_enchantment_industry:apotheosis_module",
+      "condition": "create_enchantment_industry:apotheosis_module",
       "module": "enchantment"
     }
   ],
+  "type": "create_enchantment_industry:infusing",
   "ingredients": [
     {
-      "amount": 250,
+      "amount": 20250,
       "fluid": "create_dragons_plus:dragon_breath",
       "nbt": {}
     }
   ],
   "results": [
     {
-      "amount": 750,
+      "amount": 60750,
       "fluid": "create_enchantment_industry:infused_dragon_breath"
     }
   ],

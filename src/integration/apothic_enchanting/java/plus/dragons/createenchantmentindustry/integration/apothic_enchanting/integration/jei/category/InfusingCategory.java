@@ -25,7 +25,8 @@ import com.simibubi.create.compat.jei.DoubleItemIcon;
 import com.simibubi.create.foundation.fluid.FluidIngredient;
 import com.simibubi.create.foundation.gui.AllGuiTextures;
 import dev.shadowsoffire.apotheosis.util.ApothMiscUtil;
-import mezz.jei.api.forge.ForgeTypes;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
+import mezz.jei.api.fabric.constants.FabricTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
@@ -38,7 +39,6 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.processing.infuser.InfusingRecipe;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.registry.CEIABlocks;
@@ -46,7 +46,7 @@ import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.com
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.registry.CEIARecipes;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.integration.jei.widget.AnimatedInfuser;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.util.CEIALang;
-import plus.dragons.createenchantmentindustry.mixin.accessor.CreateRecipeCategoryAccessor;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 
 public class InfusingCategory implements IRecipeCategory<InfusingRecipe> {
     public static final RecipeType<InfusingRecipe> TYPE = new RecipeType<>(
@@ -54,7 +54,7 @@ public class InfusingCategory implements IRecipeCategory<InfusingRecipe> {
     private static final Component title = CEIALang.translate("recipe.infusing").component();
     private static final IDrawable icon = new DoubleItemIcon(CEIABlocks.INFUSER::asStack, AllBlocks.BASIN::asStack);
     private static final ResourceLocation TEXTURES = new ResourceLocation(
-            "apotheosis", "textures/gui/enchanting_jei.png");
+            "zenith", "textures/gui/enchanting_jei.png");
     private final AnimatedInfuser infuser = new AnimatedInfuser();
 
     @Override
@@ -94,19 +94,20 @@ public class InfusingCategory implements IRecipeCategory<InfusingRecipe> {
         } else {
             builder.addSlot(RecipeIngredientRole.INPUT, x, y)
                     .setBackground(getRenderedSlot(), -1, -1)
-                    .addIngredients(ForgeTypes.FLUID_STACK, recipe.getFluidIngredients().get(0).getMatchingFluidStacks())
-                    .setFluidRenderer(1, false, 16, 16)
-                    .addTooltipCallback(CreateRecipeCategoryAccessor::invokeAddPotionTooltip);
+                    .addIngredients(
+                            FabricTypes.FLUID_STACK,
+                            toJei(recipe.getFluidIngredients().get(0).getMatchingFluidStacks()))
+                    .setFluidRenderer(1, false, 16, 16);
         }
 
         var reagent = FluidIngredient.fromTag(
                 CEIAFluids.MOD_TAGS.infusing_ingredients,
-                ApothMiscUtil.getExpCostForSlot((int) recipe.getStats().eterna(), 0));
+                Math.toIntExact(CEIFluidUnits.millibuckets(
+                        ApothMiscUtil.getExpCostForSlot((int) recipe.getStats().eterna(), 0))));
         builder.addSlot(RecipeIngredientRole.INPUT, 120, 7)
                 .setBackground(getRenderedSlot(), -1, -1)
-                .addIngredients(ForgeTypes.FLUID_STACK, reagent.getMatchingFluidStacks())
-                .setFluidRenderer(1, false, 16, 16)
-                .addTooltipCallback(CreateRecipeCategoryAccessor::invokeAddPotionTooltip);
+                .addIngredients(FabricTypes.FLUID_STACK, toJei(reagent.getMatchingFluidStacks()))
+                .setFluidRenderer(1, false, 16, 16);
 
         x = 142;
         if (!recipe.getRollableResults().isEmpty()) {
@@ -120,8 +121,7 @@ public class InfusingCategory implements IRecipeCategory<InfusingRecipe> {
             builder.addSlot(RecipeIngredientRole.OUTPUT, x, y)
                     .setBackground(getRenderedSlot(), -1, -1)
                     .addFluidStack(fluid.getFluid(), fluid.getAmount())
-                    .setFluidRenderer(1, false, 16, 16)
-                    .addTooltipCallback(CreateRecipeCategoryAccessor::invokeAddPotionTooltip);
+                    .setFluidRenderer(1, false, 16, 16);
         }
     }
 
@@ -132,7 +132,8 @@ public class InfusingCategory implements IRecipeCategory<InfusingRecipe> {
         shadow.render(guiGraphics, 79, 54);
 
         var fluid = recipeSlotsView.getSlotViews().get(1)
-                .getDisplayedIngredient(ForgeTypes.FLUID_STACK)
+                .getDisplayedIngredient(FabricTypes.FLUID_STACK)
+                .map(com.simibubi.create.compat.jei.category.CreateRecipeCategory::fromJei)
                 .orElse(FluidStack.EMPTY);
         infuser.with(fluid, recipe.getStats()).draw(guiGraphics, getWidth() / 2 + 3, 20);
 
@@ -142,8 +143,8 @@ public class InfusingCategory implements IRecipeCategory<InfusingRecipe> {
 
         var stats = recipe.getStats();
         Font font = Minecraft.getInstance().font;
-        guiGraphics.drawString(font, Component.translatable("gui.apotheosis.enchant.eterna").append(Component.literal(" " + stats.eterna())), 9, 0, 0x3DB53D, false);
-        guiGraphics.drawString(font, Component.translatable("gui.apotheosis.enchant.quanta").append(Component.literal(" " + stats.quanta() + "%")), 9, 10, 0xFC5454, false);
-        guiGraphics.drawString(font, Component.translatable("gui.apotheosis.enchant.arcana").append(Component.literal(" " + stats.arcana() + "%")), 9, 20, 0xA800A8, false);
+        guiGraphics.drawString(font, Component.translatable("gui.zenith.enchant.eterna").append(Component.literal(" " + stats.eterna())), 9, 0, 0x3DB53D, false);
+        guiGraphics.drawString(font, Component.translatable("gui.zenith.enchant.quanta").append(Component.literal(" " + stats.quanta() + "%")), 9, 10, 0xFC5454, false);
+        guiGraphics.drawString(font, Component.translatable("gui.zenith.enchant.arcana").append(Component.literal(" " + stats.arcana() + "%")), 9, 20, 0xA800A8, false);
     }
 }

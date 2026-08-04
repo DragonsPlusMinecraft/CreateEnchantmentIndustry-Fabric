@@ -18,22 +18,14 @@
 
 package plus.dragons.createenchantmentindustry.common.processing;
 
-import java.util.function.Consumer;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import plus.dragons.createenchantmentindustry.client.CEIClient;
 
-/** Common-side item that asks the physical client to install its custom renderer. */
+/** Common-side block item whose renderer is installed by the Fabric client entrypoint. */
 public abstract class BlazeCustomRenderedBlockItem extends BlockItem {
     protected BlazeCustomRenderedBlockItem(Block block, Item.Properties properties) {
         super(block, properties);
-    }
-
-    @Override
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        CEIClient.initializeBlazeItemRenderer(this, getRenderer(), consumer);
     }
 
     protected abstract Renderer getRenderer();

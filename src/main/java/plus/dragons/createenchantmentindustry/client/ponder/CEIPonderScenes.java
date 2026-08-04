@@ -28,7 +28,6 @@ import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraftforge.data.loading.DatagenModLoader;
 import plus.dragons.createenchantmentindustry.client.ponder.scene.*;
 import plus.dragons.createenchantmentindustry.common.registry.CEIBlocks;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
@@ -63,7 +62,7 @@ public class CEIPonderScenes {
                 .addStoryBoard("forger", ForgerScene::superEnchant, CEIPonderTags.SUPER_EXPERIENCE_APPLIANCES)
                 .addStoryBoard("automate_forger", ForgerScene::automate, AllCreatePonderTags.ARM_TARGETS);
 
-        if (DatagenModLoader.isRunningDataGen() || CEIConfig.features().classicBlazeEnchanter.get()) {
+        if (isDataGen() || CEIConfig.features().classicBlazeEnchanter.get()) {
             HELPER.forComponents(CEIBlocks.CLASSIC_BLAZE_ENCHANTER)
                     .addStoryBoard("classic_blaze_enchanter", ClassicBlazeEnchanterScene::basic, CEIPonderTags.EXPERIENCE_APPLIANCES)
                     .addStoryBoard("automate_classic_blaze_enchanter", ClassicBlazeEnchanterScene::automate, AllCreatePonderTags.ARM_TARGETS);
@@ -77,8 +76,12 @@ public class CEIPonderScenes {
     }
 
     public static void enchant(CreateSceneBuilder scene, ItemStack item, Enchantment enchantment, int level) {
-        if (DatagenModLoader.isRunningDataGen()) // scene.world().getHolderLookupProvider() cause null when get level
+        if (isDataGen()) // scene.world().getHolderLookupProvider() causes null when no level exists
             return;
         item.enchant(enchantment, level);
+    }
+
+    private static boolean isDataGen() {
+        return System.getProperty("fabric-api.datagen") != null;
     }
 }

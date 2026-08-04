@@ -22,6 +22,7 @@ import com.mojang.serialization.DataResult;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
 import com.simibubi.create.foundation.utility.CreateLang;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.ChatFormatting;
@@ -29,11 +30,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fluids.FluidStack;
 import plus.dragons.createenchantmentindustry.common.fluids.printer.PrinterBlockEntity;
 import plus.dragons.createenchantmentindustry.common.item.CEIItemData;
 import plus.dragons.createenchantmentindustry.common.registry.CEIDataMaps;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 import plus.dragons.createenchantmentindustry.util.CEILang;
 
 public class AddressPrintingBehaviour implements PrintingBehaviour {
@@ -67,9 +68,9 @@ public class AddressPrintingBehaviour implements PrintingBehaviour {
     }
 
     @Override
-    public int getRequiredFluidAmount(Level level, ItemStack stack, FluidStack fluidStack) {
+    public long getRequiredFluidAmount(Level level, ItemStack stack, FluidStack fluidStack) {
         var amount = CEIDataMaps.PRINTING_ADDRESS_INGREDIENT.get(fluidStack.getFluid());
-        return amount == null ? 0 : amount;
+        return amount == null ? 0 : CEIFluidUnits.millibuckets(amount);
     }
 
     @Override

@@ -29,7 +29,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.fluids.FluidUtil;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createdragonsplus.common.advancements.AdvancementBehaviour;
 import plus.dragons.createdragonsplus.common.processing.blaze.BlazeBlock;
@@ -62,10 +61,22 @@ public class BlazeComposerBlock extends BlazeBlock<BlazeComposerBlockEntity> {
         }
         if (blockEntity == null)
             return InteractionResult.PASS;
-        if (FluidUtil.getFluidHandler(stack).isPresent()) {
-            if (FluidUtil.interactWithFluidHandler(player, hand, blockEntity.getFluidHandler(null)))
-                return InteractionResult.sidedSuccess(level.isClientSide);
-            return InteractionResult.PASS;
+        if (BlazeComposerFluidTransfer.hasFluidStorage(stack)) {
+            if (level.isClientSide)
+                return InteractionResult.SUCCESS;
+            var tank = blockEntity.getFluidStorage(null);
+            if (tank == null)
+                return InteractionResult.PASS;
+            var transfer = BlazeComposerFluidTransfer.transfer(stack, tank, false);
+            if (transfer.isEmpty())
+                return InteractionResult.PASS;
+            if (stack.getCount() == 1) {
+                player.setItemInHand(hand, transfer.container());
+            } else {
+                stack.shrink(1);
+                player.getInventory().placeItemBackInInventory(transfer.container());
+            }
+            return InteractionResult.CONSUME;
         }
         var remainder = blockEntity.insertItem(stack, false);
         if (ItemStack.isSameItemSameTags(stack, remainder) && remainder.getCount() == stack.getCount())

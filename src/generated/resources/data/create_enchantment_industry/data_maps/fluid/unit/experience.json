@@ -1,85 +1,112 @@
 {
   "values": {
     "cofh_core:experience": {
-      "forge:conditions": [
+      "fabric:load_conditions": [
         {
-          "type": "forge:mod_loaded",
-          "modid": "cofh_core"
+          "condition": "fabric:all_mods_loaded",
+          "values": [
+            "cofh_core"
+          ]
         }
       ],
-      "forge:value": 25
+      "replace": false,
+      "value": 25
     },
     "cyclic:xpjuice": {
-      "forge:conditions": [
+      "fabric:load_conditions": [
         {
-          "type": "forge:mod_loaded",
-          "modid": "cyclic"
+          "condition": "fabric:all_mods_loaded",
+          "values": [
+            "cyclic"
+          ]
         }
       ],
-      "forge:value": 20
+      "replace": false,
+      "value": 20
     },
     "enderio:xpjuice": {
-      "forge:conditions": [
+      "fabric:load_conditions": [
         {
-          "type": "forge:mod_loaded",
-          "modid": "enderio"
+          "condition": "fabric:all_mods_loaded",
+          "values": [
+            "enderio"
+          ]
         }
       ],
-      "forge:value": 20
+      "replace": false,
+      "value": 20
     },
     "industrialforegoing:essence": {
-      "forge:conditions": [
+      "fabric:load_conditions": [
         {
-          "type": "forge:mod_loaded",
-          "modid": "industrialforegoing"
+          "condition": "fabric:all_mods_loaded",
+          "values": [
+            "industrialforegoing"
+          ]
         }
       ],
-      "forge:value": 20
+      "replace": false,
+      "value": 20
     },
     "justdirethings:xp_fluid_source": {
-      "forge:conditions": [
+      "fabric:load_conditions": [
         {
-          "type": "forge:mod_loaded",
-          "modid": "justdirethings"
+          "condition": "fabric:all_mods_loaded",
+          "values": [
+            "justdirethings"
+          ]
         }
       ],
-      "forge:value": 20
+      "replace": false,
+      "value": 20
     },
     "mob_grinding_utils:fluid_xp": {
-      "forge:conditions": [
+      "fabric:load_conditions": [
         {
-          "type": "forge:mod_loaded",
-          "modid": "mob_grinding_utils"
+          "condition": "fabric:all_mods_loaded",
+          "values": [
+            "mob_grinding_utils"
+          ]
         }
       ],
-      "forge:value": 20
+      "replace": false,
+      "value": 20
     },
     "pneumaticcraft:memory_essence": {
-      "forge:conditions": [
+      "fabric:load_conditions": [
         {
-          "type": "forge:mod_loaded",
-          "modid": "pneumaticcraft"
+          "condition": "fabric:all_mods_loaded",
+          "values": [
+            "pneumaticcraft"
+          ]
         }
       ],
-      "forge:value": 20
+      "replace": false,
+      "value": 20
     },
     "reliquary:xp_juice_still": {
-      "forge:conditions": [
+      "fabric:load_conditions": [
         {
-          "type": "forge:mod_loaded",
-          "modid": "reliquary"
+          "condition": "fabric:all_mods_loaded",
+          "values": [
+            "reliquary"
+          ]
         }
       ],
-      "forge:value": 20
+      "replace": false,
+      "value": 20
     },
     "sophisticatedcore:xp_still": {
-      "forge:conditions": [
+      "fabric:load_conditions": [
         {
-          "type": "forge:mod_loaded",
-          "modid": "sophisticatedcore"
+          "condition": "fabric:all_mods_loaded",
+          "values": [
+            "sophisticatedcore"
+          ]
         }
       ],
-      "forge:value": 20
+      "replace": false,
+      "value": 20
     }
   }
 }

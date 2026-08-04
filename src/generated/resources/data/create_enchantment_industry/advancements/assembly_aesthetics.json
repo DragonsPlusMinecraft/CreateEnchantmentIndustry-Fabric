@@ -14,7 +14,7 @@
     "frame": "task",
     "hidden": false,
     "icon": {
-      "item": "create_dragons_plus:rare_marble_gate_package"
+      "item": "minecraft:painting"
     },
     "show_toast": true,
     "title": {

@@ -18,35 +18,39 @@
 
 package plus.dragons.createenchantmentindustry.config;
 
+import fuzs.forgeconfigapiport.api.config.v2.ForgeConfigRegistry;
+import net.createmod.catnip.config.ConfigBase;
 import net.minecraft.Util;
 import net.minecraft.util.Unit;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig.Type;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
+import plus.dragons.createenchantmentindustry.common.CEICommon;
 
-public class CEIConfig {
+public final class CEIConfig {
     private static final CEICommonConfig COMMON_CONFIG = new CEICommonConfig();
     private static final CEIClientConfig CLIENT_CONFIG = new CEIClientConfig();
     private static final CEIServerConfig SERVER_CONFIG = new CEIServerConfig();
-    private static ForgeConfigSpec COMMON_SPEC;
-    private static ForgeConfigSpec CLIENT_SPEC;
-    private static ForgeConfigSpec SERVER_SPEC;
+    private static final ForgeConfigSpec COMMON_SPEC = createSpec(COMMON_CONFIG);
+    private static final ForgeConfigSpec CLIENT_SPEC = createSpec(CLIENT_CONFIG);
+    private static final ForgeConfigSpec SERVER_SPEC = createSpec(SERVER_CONFIG);
+    private static boolean registered;
 
-    public CEIConfig(ModLoadingContext modLoadingContext) {
-        COMMON_SPEC = Util.make(new ForgeConfigSpec.Builder().configure(builder -> {
-            COMMON_CONFIG.registerAll(builder);
+    private CEIConfig() {}
+
+    private static ForgeConfigSpec createSpec(ConfigBase config) {
+        return new ForgeConfigSpec.Builder().configure(builder -> {
+            config.registerAll(builder);
             return Unit.INSTANCE;
-        }).getValue(), spec -> modLoadingContext.registerConfig(Type.COMMON, spec));
-        CLIENT_SPEC = Util.make(new ForgeConfigSpec.Builder().configure(builder -> {
-            CLIENT_CONFIG.registerAll(builder);
-            return Unit.INSTANCE;
-        }).getValue(), spec -> modLoadingContext.registerConfig(Type.CLIENT, spec));
-        SERVER_SPEC = Util.make(new ForgeConfigSpec.Builder().configure(builder -> {
-            SERVER_CONFIG.registerAll(builder);
-            return Unit.INSTANCE;
-        }).getValue(), spec -> modLoadingContext.registerConfig(Type.SERVER, spec));
+        }).getValue();
+    }
+
+    public static void register() {
+        if (registered)
+            return;
+        registered = true;
+        Util.make(COMMON_SPEC, spec -> ForgeConfigRegistry.INSTANCE.register(CEICommon.ID, Type.COMMON, spec));
+        Util.make(CLIENT_SPEC, spec -> ForgeConfigRegistry.INSTANCE.register(CEICommon.ID, Type.CLIENT, spec));
+        Util.make(SERVER_SPEC, spec -> ForgeConfigRegistry.INSTANCE.register(CEICommon.ID, Type.SERVER, spec));
     }
 
     public static CEICommonConfig common() {
@@ -83,29 +87,5 @@ public class CEIConfig {
 
     public static CEIFeaturesConfig features() {
         return COMMON_CONFIG.features;
-    }
-
-    @SubscribeEvent
-    public void onLoad(ModConfigEvent.Loading event) {
-        var spec = event.getConfig().getSpec();
-        if (COMMON_SPEC == spec) {
-            COMMON_CONFIG.onLoad();
-        } else if (SERVER_SPEC == spec) {
-            SERVER_CONFIG.onLoad();
-        } else if (CLIENT_SPEC == spec) {
-            CLIENT_CONFIG.onLoad();
-        }
-    }
-
-    @SubscribeEvent
-    public void onReload(ModConfigEvent.Reloading event) {
-        var spec = event.getConfig().getSpec();
-        if (COMMON_SPEC == spec) {
-            COMMON_CONFIG.onReload();
-        } else if (SERVER_SPEC == spec) {
-            SERVER_CONFIG.onReload();
-        } else if (CLIENT_SPEC == spec) {
-            CLIENT_CONFIG.onReload();
-        }
     }
 }

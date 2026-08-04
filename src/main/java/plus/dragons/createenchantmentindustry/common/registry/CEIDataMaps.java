@@ -33,43 +33,35 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.resource.conditions.v1.ResourceConditions;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.PreparableReloadListener;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.ExtraCodecs;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.AddReloadListenerEvent;
-import net.minecraftforge.event.OnDatapackSyncEvent;
-import net.minecraftforge.event.TagsUpdatedEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.util.thread.EffectiveSide;
-import net.minecraftforge.network.PacketDistributor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
 import plus.dragons.createenchantmentindustry.common.datamap.CEIDataMapType;
 import plus.dragons.createenchantmentindustry.common.fluids.experience.ExperienceFuel;
-import plus.dragons.createenchantmentindustry.common.network.CEIDataMapSyncPacket;
 import plus.dragons.createenchantmentindustry.common.network.CEINetwork;
 import plus.dragons.createenchantmentindustry.common.processing.EnchantmentProcessingRule;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 import plus.dragons.createenchantmentindustry.util.CEIIntIntPair;
 
-/** Forge 1.20.1 backport of the CEI data maps used by the 1.21 codebase. */
+/** Fabric 1.20.1 backport of the CEI data maps used by the 1.21 codebase. */
 public final class CEIDataMaps {
     private static final Logger LOGGER = LoggerFactory.getLogger(CEIDataMaps.class);
     private static final Gson GSON = new Gson();
@@ -121,7 +113,7 @@ public final class CEIDataMaps {
     private static final Map<ResourceLocation, CEIDataMapType<?, ?>> TYPES_BY_ID = indexTypes();
     private static final AtomicReference<Snapshot> SERVER = new AtomicReference<>(Snapshot.empty());
     private static final AtomicReference<Snapshot> CLIENT = new AtomicReference<>(Snapshot.empty());
-    private static final AtomicReference<ResourceManager> PENDING_SERVER_RESOURCES = new AtomicReference<>();
+    private static final AtomicReference<MinecraftServer> ACTIVE_SERVER = new AtomicReference<>();
 
     private CEIDataMaps() {}
 
@@ -135,38 +127,19 @@ public final class CEIDataMaps {
         return Map.copyOf(result);
     }
 
-    public static void register(IEventBus modBus) {
+    public static void register() {
         CEINetwork.register();
-        MinecraftForge.EVENT_BUS.addListener(CEIDataMaps::addReloadListener);
-        MinecraftForge.EVENT_BUS.addListener(CEIDataMaps::tagsUpdated);
-        MinecraftForge.EVENT_BUS.addListener(CEIDataMaps::sync);
-    }
-
-    private static void addReloadListener(AddReloadListenerEvent event) {
-        event.addListener(new ReloadListener());
-    }
-
-    private static void tagsUpdated(TagsUpdatedEvent event) {
-        if (event.getUpdateCause() != TagsUpdatedEvent.UpdateCause.SERVER_DATA_LOAD) {
-            return;
-        }
-        ResourceManager resources = PENDING_SERVER_RESOURCES.getAndSet(null);
-        if (resources == null) {
-            return;
-        }
-        // Forge posts TagsUpdatedEvent only after ReloadableServerResources has rebound the
-        // static registry tags. Build and atomically publish the snapshot here so #tag keys
-        // always resolve against the data from this exact reload.
-        SERVER.set(load(resources));
-    }
-
-    private static void sync(OnDatapackSyncEvent event) {
-        CEIDataMapSyncPacket packet = CEIDataMapSyncPacket.create();
-        if (event.getPlayer() != null) {
-            CEINetwork.CHANNEL.send(PacketDistributor.PLAYER.with(event::getPlayer), packet);
-        } else {
-            CEINetwork.CHANNEL.send(PacketDistributor.ALL.noArg(), packet);
-        }
+        ServerLifecycleEvents.SERVER_STARTING.register(ACTIVE_SERVER::set);
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> SERVER.set(load(server.getResourceManager())));
+        ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resources, success) -> {
+            if (success)
+                SERVER.set(load(resources));
+        });
+        ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.register((player, joined) -> CEINetwork.sendDataMapSnapshot(player));
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            ACTIVE_SERVER.compareAndSet(server, null);
+            SERVER.set(Snapshot.empty());
+        });
     }
 
     public static void clearClientSnapshot() {
@@ -189,8 +162,18 @@ public final class CEIDataMaps {
         return entries(type).filter(pair -> FluidHelper.convertToStill(pair.getFirst()) == pair.getFirst());
     }
 
+    /** Converts legacy mB data-map values before exposing them to Fabric fluid consumers. */
+    public static Stream<Pair<Fluid, Long>> getSourceFluidAmountEntries(CEIDataMapType<Fluid, Integer> type) {
+        return getSourceFluidEntries(type)
+                .map(pair -> Pair.of(pair.getFirst(), CEIFluidUnits.millibuckets(pair.getSecond())));
+    }
+
     private static Snapshot current() {
-        return EffectiveSide.get() == LogicalSide.CLIENT ? CLIENT.get() : SERVER.get();
+        MinecraftServer server = ACTIVE_SERVER.get();
+        boolean serverThread = server != null && server.isSameThread();
+        return (FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER || serverThread)
+                ? SERVER.get()
+                : CLIENT.get();
     }
 
     public static Map<ResourceLocation, Map<ResourceLocation, JsonElement>> serializeServerSnapshot() {
@@ -218,29 +201,6 @@ public final class CEIDataMaps {
         });
         TYPES.forEach(type -> result.putIfAbsent(type.id(), Map.of()));
         return new Snapshot(Map.copyOf(result));
-    }
-
-    private static final class ReloadListener implements PreparableReloadListener {
-        @Override
-        public CompletableFuture<Void> reload(
-                PreparationBarrier barrier,
-                ResourceManager resourceManager,
-                ProfilerFiller preparationsProfiler,
-                ProfilerFiller reloadProfiler,
-                Executor backgroundExecutor,
-                Executor gameExecutor) {
-            // Forge appends mod listeners to the vanilla reload pipeline, but registry tags are
-            // rebound only after that pipeline completes. Keep this reload's ResourceManager and
-            // publish the snapshot from TagsUpdatedEvent instead.
-            return CompletableFuture.runAsync(() -> {}, backgroundExecutor)
-                    .thenCompose(barrier::wait)
-                    .thenRunAsync(() -> PENDING_SERVER_RESOURCES.set(resourceManager), gameExecutor);
-        }
-
-        @Override
-        public String getName() {
-            return "CEI data maps";
-        }
     }
 
     private static Snapshot load(ResourceManager resourceManager) {
@@ -328,6 +288,10 @@ public final class CEIDataMaps {
             return true;
         }
         JsonObject object = element.getAsJsonObject();
+        if (object.has(ResourceConditions.CONDITIONS_KEY)
+                && !ResourceConditions.objectMatchesConditions(object)) {
+            return false;
+        }
         JsonElement conditions = firstPresent(
                 object,
                 "forge:conditions",
@@ -357,16 +321,28 @@ public final class CEIDataMaps {
     }
 
     private static boolean evaluateCondition(JsonObject condition, String source) {
-        if (!condition.has("type")) {
+        JsonElement typeElement = firstPresent(condition, "type", "condition");
+        if (typeElement == null)
             throw new IllegalArgumentException(source + " condition is missing type");
-        }
-        String type = condition.get("type").getAsString();
+        String type = typeElement.getAsString();
         return switch (type) {
             case "forge:mod_loaded", "neoforge:mod_loaded" -> {
                 if (!condition.has("modid")) {
                     throw new IllegalArgumentException(source + " mod_loaded condition is missing modid");
                 }
-                yield ModList.get().isLoaded(condition.get("modid").getAsString());
+                yield FabricLoader.getInstance().isModLoaded(condition.get("modid").getAsString());
+            }
+            case "forge:all_mods_loaded", "neoforge:all_mods_loaded" -> {
+                JsonElement values = firstPresent(condition, "values", "modids", "mods");
+                if (values == null || !values.isJsonArray())
+                    throw new IllegalArgumentException(source + " all_mods_loaded condition requires an array");
+                boolean loaded = true;
+                for (JsonElement mod : values.getAsJsonArray()) {
+                    if (!mod.isJsonPrimitive() || !mod.getAsJsonPrimitive().isString())
+                        throw new IllegalArgumentException(source + " all_mods_loaded contains a non-string mod id");
+                    loaded &= FabricLoader.getInstance().isModLoaded(mod.getAsString());
+                }
+                yield loaded;
             }
             case "forge:not", "neoforge:not" -> {
                 JsonElement child = firstPresent(condition, "value", "condition");

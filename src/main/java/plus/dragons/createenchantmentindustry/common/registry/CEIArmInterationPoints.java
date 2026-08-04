@@ -21,7 +21,6 @@ package plus.dragons.createenchantmentindustry.common.registry;
 import static plus.dragons.createenchantmentindustry.common.CEICommon.REGISTRATE;
 
 import com.tterrag.registrate.util.entry.RegistryEntry;
-import net.minecraftforge.eventbus.api.IEventBus;
 import plus.dragons.createenchantmentindustry.common.processing.classic_enchanter.ClassicBlazeEnchanterArmInteractionPoint;
 import plus.dragons.createenchantmentindustry.common.processing.enchanter.BlazeEnchanterArmInteractionPoint;
 import plus.dragons.createenchantmentindustry.common.processing.forger.BlazeForgerArmInteractionPoint;
@@ -37,5 +36,5 @@ public class CEIArmInterationPoints {
             .armInteractionPoint("classic_blaze_enchanter", ClassicBlazeEnchanterArmInteractionPoint.Type::new)
             .register();
 
-    public static void register(IEventBus modBus) {}
+    public static void register() {}
 }

@@ -18,24 +18,21 @@
 
 package plus.dragons.createenchantmentindustry.data;
 
+import java.util.Comparator;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.TagsProvider;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraftforge.common.data.ExistingFileHelper;
-import plus.dragons.createenchantmentindustry.common.CEICommon;
 import plus.dragons.createenchantmentindustry.common.registry.CEIEnchantments;
 
 /** Backports the semantic enchantment tags introduced after 1.20.1. */
 public class CEIEnchantmentTagsProvider extends TagsProvider<Enchantment> {
     public CEIEnchantmentTagsProvider(
-            PackOutput output,
-            CompletableFuture<HolderLookup.Provider> lookupProvider,
-            ExistingFileHelper existingFileHelper) {
-        super(output, Registries.ENCHANTMENT, lookupProvider, CEICommon.ID, existingFileHelper);
+            net.fabricmc.fabric.api.datagen.v1.FabricDataOutput output,
+            CompletableFuture<HolderLookup.Provider> lookupProvider) {
+        super(output, Registries.ENCHANTMENT, lookupProvider);
     }
 
     @Override
@@ -47,15 +44,18 @@ public class CEIEnchantmentTagsProvider extends TagsProvider<Enchantment> {
         tag(CEIEnchantments.MOD_TAGS.penaltyCursesDeny);
         tag(CEIEnchantments.MOD_TAGS.printingDeny);
 
-        provider.lookupOrThrow(Registries.ENCHANTMENT).listElements().forEach(holder -> {
-            Enchantment enchantment = holder.value();
-            if (enchantment.isDiscoverable() && !enchantment.isTreasureOnly())
-                addOptional(enchanting, holder);
-            if (enchantment.isTreasureOnly() && !enchantment.isCurse())
-                addOptional(superEnchantingExclusive, holder);
-            if (enchantment.isCurse())
-                addOptional(penaltyCurses, holder);
-        });
+        provider.lookupOrThrow(Registries.ENCHANTMENT)
+                .listElements()
+                .sorted(Comparator.comparing(holder -> holder.key().location()))
+                .forEach(holder -> {
+                    Enchantment enchantment = holder.value();
+                    if (enchantment.isDiscoverable() && !enchantment.isTreasureOnly())
+                        addOptional(enchanting, holder);
+                    if (enchantment.isTreasureOnly() && !enchantment.isCurse())
+                        addOptional(superEnchantingExclusive, holder);
+                    if (enchantment.isCurse())
+                        addOptional(penaltyCurses, holder);
+                });
 
         tag(CEIEnchantments.MOD_TAGS.superEnchanting)
                 .addTag(CEIEnchantments.MOD_TAGS.enchanting)

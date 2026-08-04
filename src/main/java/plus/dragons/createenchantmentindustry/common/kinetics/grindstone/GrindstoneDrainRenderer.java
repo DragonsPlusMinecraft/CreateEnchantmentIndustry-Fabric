@@ -26,7 +26,8 @@ import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
 import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour.TankSegment;
 import dev.engine_room.flywheel.lib.transform.TransformStack;
-import net.createmod.catnip.platform.ForgeCatnipServices;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
+import net.createmod.catnip.platform.FabricCatnipServices;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider.Context;
@@ -37,7 +38,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.fluids.FluidStack;
 import plus.dragons.createenchantmentindustry.common.registry.CEIBlocks;
 
 public class GrindstoneDrainRenderer extends KineticBlockEntityRenderer<GrindstoneDrainBlockEntity> {
@@ -80,7 +80,7 @@ public class GrindstoneDrainRenderer extends KineticBlockEntityRenderer<Grindsto
             offset = 1 - offset;
 
         int count = 0;
-        for (int i = 1; i < drain.inventory.getSlots(); i++)
+        for (int i = 1; i < drain.inventory.getSlotCount(); i++)
             if (!drain.inventory.getStackInSlot(i).isEmpty())
                 count++;
 
@@ -93,7 +93,7 @@ public class GrindstoneDrainRenderer extends KineticBlockEntityRenderer<Grindsto
         var yOffset = Mth.lerp(yDelta, 13 / 16f, 1f);
         int rendered = 0;
         ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
-        for (int i = 0; i < drain.inventory.getSlots(); i++) {
+        for (int i = 0; i < drain.inventory.getSlotCount(); i++) {
             ItemStack stack = drain.inventory.getStackInSlot(i);
             if (stack.isEmpty())
                 continue;
@@ -128,7 +128,7 @@ public class GrindstoneDrainRenderer extends KineticBlockEntityRenderer<Grindsto
             float max = min + (12 / 16f);
             float minY = 5f / 16f;
             level *= (7 / 16f);
-            ForgeCatnipServices.FLUID_RENDERER.renderFluidBox(
+            FabricCatnipServices.FLUID_RENDERER.renderFluidBox(
                     fluidStack,
                     min, minY, min,
                     max, minY + level, max,

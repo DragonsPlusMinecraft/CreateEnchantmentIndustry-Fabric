@@ -23,12 +23,15 @@ import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BehaviourType;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import java.util.Collection;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -57,17 +60,14 @@ public abstract class SmartBlockEntityMixin extends CachedRenderBBBlockEntity {
             return;
         var state = this.getBlockState();
         for (var behaviour : this.getAllBehaviours()) {
-            IFluidHandler handler;
+            Storage<FluidVariant> handler;
             if (behaviour instanceof SmartFluidTankBehaviour tank) {
-                handler = tank.getCapability().orElse(null);
+                handler = tank.getCapability();
             } else if (behaviour instanceof FluidTankBehaviour tank) {
-                handler = tank.getCapability().orElse(null);
+                handler = tank.getCapability();
             } else continue;
-            if (handler == null)
-                continue;
-            int tanks = handler.getTanks();
-            for (int tank = 0; tank < tanks; tank++) {
-                var fluid = handler.getFluidInTank(tank);
+            for (StorageView<FluidVariant> view : handler.nonEmptyViews()) {
+                var fluid = new FluidStack(view.getResource(), view.getAmount());
                 int experience = ExperienceHelper.getExperienceFromFluid(fluid);
                 ExperienceFluidDropContext.dropExperience(serverLevel, state, this.worldPosition, experience);
             }

@@ -22,10 +22,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.network.NetworkEvent;
 import plus.dragons.createenchantmentindustry.common.registry.CEIDataMaps;
 
 public record CEIDataMapSyncPacket(Map<ResourceLocation, Map<ResourceLocation, JsonElement>> values) {
@@ -83,11 +81,5 @@ public record CEIDataMapSyncPacket(Map<ResourceLocation, Map<ResourceLocation, J
                     "CEI data-map snapshot " + description + " count " + count + " exceeds limit " + maximum);
         }
         return count;
-    }
-
-    public static void handle(CEIDataMapSyncPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        context.enqueueWork(() -> CEIDataMaps.applyClientSnapshot(packet.values));
-        context.setPacketHandled(true);
     }
 }

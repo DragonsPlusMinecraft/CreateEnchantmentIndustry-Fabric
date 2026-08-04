@@ -20,40 +20,91 @@ package plus.dragons.createenchantmentindustry.data;
 
 import static plus.dragons.createenchantmentindustry.common.CEICommon.REGISTRATE;
 
-import net.minecraftforge.data.event.GatherDataEvent;
-import net.minecraftforge.data.loading.DatagenModLoader;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import com.tterrag.registrate.providers.ProviderType;
+import io.github.fabricators_of_create.porting_lib.data.ExistingFileHelper;
+import net.createmod.ponder.foundation.PonderIndex;
+import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.minecraft.core.RegistrySetBuilder;
 import plus.dragons.createenchantmentindustry.client.ponder.CEIPonderPlugin;
+import plus.dragons.createenchantmentindustry.common.CEICommon;
 import plus.dragons.createenchantmentindustry.common.registry.CEIAdvancements;
+import plus.dragons.createenchantmentindustry.integration.ModIntegration;
 
-public class CEIData {
-    public CEIData(IEventBus modBus) {
-        if (!DatagenModLoader.isRunningDataGen())
-            return;
+public class CEIData implements DataGeneratorEntrypoint {
+    @Override
+    public void onInitializeDataGenerator(FabricDataGenerator generator) {
+        initializeIntegrationData(
+                ModIntegration.APOTHEOSIS,
+                "plus.dragons.createenchantmentindustry.integration.apotheosis.data.CEIAXData");
+        initializeIntegrationData(
+                ModIntegration.APOTHIC_ENCHANTING,
+                "plus.dragons.createenchantmentindustry.integration.apothic_enchanting.data.CEIAData");
         REGISTRATE.registerBuiltinLocalization("interface");
         REGISTRATE.registerForeignLocalization();
-        REGISTRATE.registerPonderLocalization(CEIPonderPlugin::new);
+        if (PonderIndex.streamPlugins().noneMatch(plugin -> plugin.getModId().equals(CEICommon.ID)))
+            PonderIndex.addPlugin(new CEIPonderPlugin());
+        REGISTRATE.addDataGenerator(ProviderType.LANG, provider -> PonderIndex
+                .getLangAccess()
+                .provideLang(CEICommon.ID, provider::add));
         REGISTRATE.registerExtraLocalization(CEIAdvancements::provideLang);
-        modBus.register(this);
+
+        ExistingFileHelper existingFileHelper = ExistingFileHelper.withResourcesFromArg();
+        FabricDataGenerator.Pack pack = generator.createPack();
+        REGISTRATE.setExistingFileHelper(existingFileHelper);
+        REGISTRATE.setupDatagen(pack, existingFileHelper);
+        pack.addProvider(CEIGenerateEntriesProvider::new);
+        pack.addProvider((FabricDataOutput output) -> new CEIDataMapProvider(output));
+        pack.addProvider((FabricDataOutput output) -> new CEIRecipeProvider(output));
+        pack.addProvider(CEIAdvancements::new);
+        pack.addProvider(CEIEnchantmentTagsProvider::new);
+        registerIntegrationProviders(
+                pack,
+                ModIntegration.APOTHIC_ENCHANTING,
+                "plus.dragons.createenchantmentindustry.integration.apothic_enchanting.data.CEIAData");
+        registerIntegrationProviders(
+                pack,
+                ModIntegration.APOTHEOSIS,
+                "plus.dragons.createenchantmentindustry.integration.apotheosis.data.CEIAXData");
     }
 
-    @SubscribeEvent
-    public void generate(final GatherDataEvent event) {
-        var generator = event.getGenerator();
-        var existingFileHelper = event.getExistingFileHelper();
-        var lookupProvider = event.getLookupProvider();
-        var output = generator.getPackOutput();
-        var client = event.includeClient();
-        var server = event.includeServer();
+    @Override
+    public void buildRegistry(RegistrySetBuilder builder) {
+        CEIGenerateEntriesProvider.addBootstraps(builder);
+    }
 
-        CEIGenerateEntriesProvider generatedEntriesProvider = new CEIGenerateEntriesProvider(output, lookupProvider);
-        lookupProvider = generatedEntriesProvider.getRegistryProvider();
+    private static void initializeIntegrationData(ModIntegration integration, String className) {
+        invokeIntegration(integration, className, "initialize", new Class<?>[0], new Object[0]);
+    }
 
-        generator.addProvider(event.includeServer(), generatedEntriesProvider);
-        generator.addProvider(server, new CEIDataMapProvider(output));
-        generator.addProvider(server, new CEIRecipeProvider(output));
-        generator.addProvider(server, new CEIAdvancements(output, lookupProvider));
-        generator.addProvider(server, new CEIEnchantmentTagsProvider(output, lookupProvider, existingFileHelper));
+    private static void registerIntegrationProviders(
+            FabricDataGenerator.Pack pack, ModIntegration integration, String className) {
+        invokeIntegration(
+                integration,
+                className,
+                "registerProviders",
+                new Class<?>[] { FabricDataGenerator.Pack.class },
+                new Object[] { pack });
+    }
+
+    private static void invokeIntegration(
+            ModIntegration integration,
+            String className,
+            String method,
+            Class<?>[] parameterTypes,
+            Object[] arguments) {
+        if (!integration.enabledForRegistration())
+            return;
+        try {
+            Class.forName(className, true, CEIData.class.getClassLoader())
+                    .getMethod(method, parameterTypes)
+                    .invoke(null, arguments);
+        } catch (ClassNotFoundException ignored) {
+            // The optional source set is omitted from core-only builds.
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            throw new IllegalStateException(
+                    "Failed to initialize " + integration.id() + " data generation", exception);
+        }
     }
 }

@@ -19,18 +19,24 @@
 package plus.dragons.createenchantmentindustry.mixin;
 
 import com.simibubi.create.content.kinetics.deployer.DeployerFakePlayer;
-import net.minecraftforge.event.entity.living.LivingExperienceDropEvent;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import plus.dragons.createenchantmentindustry.common.kinetics.deployer.DeployerExtension;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
 
 @Mixin(value = DeployerFakePlayer.class, remap = false)
 public class DeployerFakePlayerMixin {
     @Inject(method = "deployerKillsDoNotSpawnXP", at = @At("HEAD"), cancellable = true, remap = false)
-    private static void deployerKillsDoNotSpawnXP$lowerPriority(LivingExperienceDropEvent event, CallbackInfo ci) {
-        if (CEIConfig.kinetics().deployerKillDropXp.get())
-            ci.cancel();
+    private static void deployerKillsDoNotSpawnXP$configure(
+            int experience,
+            Player player,
+            LivingEntity entity,
+            CallbackInfoReturnable<Integer> cir) {
+        if (player instanceof DeployerFakePlayer deployer && CEIConfig.kinetics().deployerKillDropXp.get())
+            cir.setReturnValue(DeployerExtension.handleKillExperience(deployer, experience));
     }
 }

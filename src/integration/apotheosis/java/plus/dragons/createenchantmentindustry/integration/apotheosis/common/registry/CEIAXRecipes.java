@@ -20,29 +20,26 @@ package plus.dragons.createenchantmentindustry.integration.apotheosis.common.reg
 
 import com.simibubi.create.content.processing.recipe.ProcessingRecipeSerializer;
 import java.util.function.Supplier;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
-import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import plus.dragons.createdragonsplus.common.recipe.RecipeTypeInfo;
+import plus.dragons.createenchantmentindustry.common.crafting.CEIRecipeTypeInfo;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.kinetics.fan.salvaging.SalvagingRecipe;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.CEIACommon;
 
 public class CEIAXRecipes {
-    private static final DeferredRegister<RecipeType<?>> TYPES = DeferredRegister.create(Registries.RECIPE_TYPE, CEIACommon.ID);
-    private static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS = DeferredRegister.create(Registries.RECIPE_SERIALIZER, CEIACommon.ID);
-
-    public static final RecipeTypeInfo<SalvagingRecipe> SALVAGING = register(
+    public static final CEIRecipeTypeInfo<SalvagingRecipe> SALVAGING = create(
             "salvaging", () -> new ProcessingRecipeSerializer<>(SalvagingRecipe::new));
+    private static boolean registered;
 
-    public static void register(IEventBus modBus) {
-        TYPES.register(modBus);
-        SERIALIZERS.register(modBus);
+    public static void register() {
+        if (registered)
+            return;
+        registered = true;
+        SALVAGING.register();
     }
 
-    private static <R extends Recipe<?>> RecipeTypeInfo<R> register(String name, Supplier<? extends RecipeSerializer<R>> serializer) {
-        return new RecipeTypeInfo<>(name, serializer, SERIALIZERS, TYPES);
+    private static <R extends Recipe<?>> CEIRecipeTypeInfo<R> create(
+            String name, Supplier<? extends RecipeSerializer<R>> serializer) {
+        return new CEIRecipeTypeInfo<>(CEIACommon.REGISTRATE.asResource(name), serializer);
     }
 }

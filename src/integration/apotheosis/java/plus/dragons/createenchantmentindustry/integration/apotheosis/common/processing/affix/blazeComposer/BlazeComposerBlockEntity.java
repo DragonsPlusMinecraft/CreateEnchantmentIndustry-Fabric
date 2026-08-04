@@ -32,11 +32,20 @@ import dev.engine_room.flywheel.lib.transform.TransformStack;
 import dev.shadowsoffire.apotheosis.Apotheosis;
 import dev.shadowsoffire.apotheosis.adventure.affix.AffixHelper;
 import dev.shadowsoffire.apotheosis.adventure.loot.LootCategory;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import java.util.List;
 import java.util.function.Consumer;
 import net.createmod.catnip.lang.LangBuilder;
 import net.createmod.catnip.math.AngleHelper;
 import net.createmod.catnip.math.VecHelper;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.api.EnvironmentInterface;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
+import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -52,18 +61,8 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidActionResult;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
-import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
+import plus.dragons.createdragonsplus.client.renderer.blockentity.BlazeBlockEntityRenderExtension;
 import plus.dragons.createdragonsplus.common.advancements.AdvancementBehaviour;
 import plus.dragons.createdragonsplus.common.fluids.tank.ConfigurableFluidTank;
 import plus.dragons.createdragonsplus.common.fluids.tank.FluidTankBehaviour;
@@ -79,10 +78,14 @@ import plus.dragons.createenchantmentindustry.integration.apotheosis.common.regi
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.registry.CEIAXStats;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.config.CEIAXConfig;
 import plus.dragons.createenchantmentindustry.util.BlazeLightningHelper;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 import plus.dragons.createenchantmentindustry.util.CEILang;
+import plus.dragons.createenchantmentindustry.util.CEITransfer;
 
 @FieldsNullabilityUnknownByDefault
-public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Clearable, IHaveGoggleInformation {
+@EnvironmentInterface(value = EnvType.CLIENT, itf = BlazeBlockEntityRenderExtension.class)
+public class BlazeComposerBlockEntity extends BlazeBlockEntity
+        implements Clearable, IHaveGoggleInformation, BlazeBlockEntityRenderExtension {
     private static final int PENALTY_STEPS_PER_LEVEL = 100;
     protected int processingTime = -1;
     protected BlazeComposerMode mode = BlazeComposerMode.EXTRACT;
@@ -94,22 +97,56 @@ public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Cleara
     protected final BlazeComposerInventory inventory;
     protected BlazeComposerModeBehaviour modeSelector;
     protected FluidTankBehaviour tanks;
-    protected IFluidHandler fuelHandler;
+    protected Storage<FluidVariant> fuelHandler;
     protected AdvancementBehaviour advancement;
     protected @Nullable ActiveComposing activeComposing;
-    private LazyOptional<IItemHandler> itemCapability = LazyOptional.empty();
-    private LazyOptional<IFluidHandler> fluidCapability = LazyOptional.empty();
+    private final SnapshotParticipant<AutomationState> automationState = new SnapshotParticipant<>() {
+        @Override
+        protected AutomationState createSnapshot() {
+            return new AutomationState(
+                    superUnlocked,
+                    processingTime,
+                    activeComposing,
+                    pendingBlockedSuperOperation,
+                    pendingBlockedSuperPenalty);
+        }
+
+        @Override
+        protected void readSnapshot(AutomationState snapshot) {
+            superUnlocked = snapshot.superUnlocked();
+            processingTime = snapshot.processingTime();
+            activeComposing = snapshot.activeComposing();
+            pendingBlockedSuperOperation = snapshot.pendingBlockedSuperOperation();
+            pendingBlockedSuperPenalty = snapshot.pendingBlockedSuperPenalty();
+            inventory.updateResult();
+        }
+
+        @Override
+        protected void onFinalCommit() {
+            inventory.updateResult();
+            notifyUpdate();
+            if (level != null && !level.isClientSide()) {
+                level.playSound(null, worldPosition, SoundEvents.BLAZE_SHOOT, SoundSource.BLOCKS,
+                        0.35F, 1.6F + 0.2F * level.random.nextFloat());
+                level.playSound(null, worldPosition, SoundEvents.AMETHYST_CLUSTER_STEP, SoundSource.BLOCKS,
+                        0.45F, 0.75F + 0.2F * level.random.nextFloat());
+            }
+        }
+    };
 
     public BlazeComposerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         this.inventory = new BlazeComposerInventory(this);
-        this.itemCapability = LazyOptional.of(() -> inventory);
     }
 
-    public @Nullable IFluidHandler getFluidHandler(@Nullable Direction side) {
+    public @Nullable Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
         if ((side == Direction.DOWN || side == null) && !isRemoved())
             return fuelHandler;
         return null;
+    }
+
+    public @Nullable Storage<ItemVariant> getItemStorage(@Nullable Direction side) {
+        return isRemoved() ? null : inventory;
     }
 
     @Override
@@ -117,7 +154,6 @@ public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Cleara
         modeSelector = new BlazeComposerModeBehaviour(this, new ModeTransform());
         tanks = new FluidTankBehaviour(this, List.of(this::createNormalTank, this::createSuperTank), false);
         fuelHandler = new SuperFuelFluidHandler(this::getNormalTank, this::getSuperTank, this::canFillSuperTank);
-        fluidCapability = LazyOptional.of(() -> fuelHandler);
         advancement = new AdvancementBehaviour(this);
         behaviours.add(modeSelector);
         behaviours.add(tanks);
@@ -125,13 +161,17 @@ public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Cleara
     }
 
     protected ConfigurableFluidTank createNormalTank(Consumer<FluidStack> fluidUpdateCallback) {
-        return new ConfigurableFluidTank(CEIAXConfig.server().affixes().blazeComposerFluidCapacity.get(), fluidUpdateCallback)
-                .allowInsertion(fluidStack -> fluidStack.getFluid() == CEIAXFluids.APOTHEOTIC_ESSENCE.get());
+        return new ConfigurableFluidTank(
+                CEIFluidUnits.millibuckets(CEIAXConfig.server().affixes().blazeComposerFluidCapacity.get()),
+                fluidUpdateCallback)
+                        .allowInsertion(fluidStack -> fluidStack.getFluid() == CEIAXFluids.APOTHEOTIC_ESSENCE.getSource());
     }
 
     protected ConfigurableFluidTank createSuperTank(Consumer<FluidStack> fluidUpdateCallback) {
-        return new ConfigurableFluidTank(CEIAXConfig.server().affixes().blazeComposerSuperFluidCapacity.get(), fluidUpdateCallback)
-                .allowInsertion(fluidStack -> fluidStack.getFluid() == CEIAXFluids.APOTHEOTIC_ESSENCE.get());
+        return new ConfigurableFluidTank(
+                CEIFluidUnits.millibuckets(CEIAXConfig.server().affixes().blazeComposerSuperFluidCapacity.get()),
+                fluidUpdateCallback)
+                        .allowInsertion(fluidStack -> fluidStack.getFluid() == CEIAXFluids.APOTHEOTIC_ESSENCE.getSource());
     }
 
     @Override
@@ -152,8 +192,8 @@ public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Cleara
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
-    protected @Nullable PartialModel getHatModel(HeatLevel heatLevel) {
+    @Environment(EnvType.CLIENT)
+    public @Nullable PartialModel getHatModel(HeatLevel heatLevel) {
         return heatLevel.isAtLeast(HeatLevel.FADING)
                 ? CEIAXPartialModels.BLAZE_COMPOSER_HAT
                 : CEIAXPartialModels.BLAZE_COMPOSER_HAT_SMALL;
@@ -360,14 +400,11 @@ public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Cleara
     }
 
     public boolean consumeEssence(int amount, boolean superMode, boolean simulate) {
-        var fluid = new FluidStack(CEIAXFluids.APOTHEOTIC_ESSENCE.get(), amount);
         var tank = superMode ? getSuperTank() : getNormalTank();
-        var drained = tank.drain(fluid, FluidAction.SIMULATE);
-        if (drained.getAmount() != amount)
-            return false;
-        if (!simulate)
-            tank.drain(fluid, FluidAction.EXECUTE);
-        return true;
+        return CEITransfer.extractExact(
+                tank,
+                CEIFluidUnits.stack(CEIAXFluids.APOTHEOTIC_ESSENCE.getSource(), amount),
+                simulate);
     }
 
     public SmartFluidTank getNormalTank() {
@@ -378,12 +415,12 @@ public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Cleara
         return tanks.getHandlers()[1];
     }
 
-    public int getNormalEssence() {
-        return getNormalTank().getFluidAmount();
+    public long getNormalEssence() {
+        return CEIFluidUnits.toMillibuckets(getNormalTank().getFluidAmount());
     }
 
-    public int getSuperEssence() {
-        return getSuperTank().getFluidAmount();
+    public long getSuperEssence() {
+        return CEIFluidUnits.toMillibuckets(getSuperTank().getFluidAmount());
     }
 
     public boolean isSuper() {
@@ -434,7 +471,7 @@ public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Cleara
     }
 
     public ItemStack extractItem(boolean simulate) {
-        for (int i = inventory.getSlots() - 1; i >= 0; i--) {
+        for (int i = inventory.getSlotCount() - 1; i >= 0; i--) {
             ItemStack extracted = inventory.extractItem(i, 1, simulate);
             if (!extracted.isEmpty()) {
                 if (!simulate && i < 2) {
@@ -447,17 +484,17 @@ public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Cleara
         return ItemStack.EMPTY;
     }
 
-    public ItemStack insertAutomationItem(ItemStack stack, boolean simulate) {
+    public ItemStack insertAutomationItem(ItemStack stack, TransactionContext transaction) {
         if (!Apotheosis.enableAdventure)
             return stack;
         if (stack.isEmpty())
             return stack;
-        if (FluidUtil.getFluidHandler(stack).isPresent())
-            return emptyFluidContainer(stack, simulate);
+        if (BlazeComposerFluidTransfer.hasFluidStorage(stack))
+            return emptyFluidContainer(stack, transaction);
         var original = stack;
         if (inventory.hasRemainingOutput() || hasRecoverableAutomationInput())
             return stack;
-        stack = unlockSuper(stack, simulate);
+        stack = unlockSuper(stack, transaction);
         if (insertedAny(original, stack))
             return stack;
         if (isSuperActivator(stack))
@@ -465,37 +502,39 @@ public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Cleara
         int slot = getAutomationInsertionSlot(stack);
         if (slot < 0)
             return stack;
-        ItemStack remainder = inventory.insertItem(slot, stack, simulate);
-        if (!simulate && insertedAny(original, remainder)) {
-            inventory.updateResult();
-            notifyUpdate();
-        }
-        return remainder;
+        return inventory.insertItem(slot, stack, transaction);
     }
 
-    public ItemStack extractAutomationItem(int slot, int amount, boolean simulate) {
-        if (slot < 0 || amount <= 0)
+    public ItemStack extractAutomationItem(int amount, TransactionContext transaction) {
+        if (amount <= 0)
             return ItemStack.EMPTY;
-        if (slot < 2)
-            return inventory.extractItem(slot + 2, amount, simulate);
-        int inputSlot = slot - 2;
-        if (inputSlot > 1 || !isRecoverableAutomationInput(inputSlot))
-            return ItemStack.EMPTY;
-        ItemStack extracted = inventory.extractItem(inputSlot, amount, simulate);
-        if (!simulate && !extracted.isEmpty()) {
-            inventory.updateResult();
-            notifyUpdate();
+        for (int slot = 3; slot >= 2; slot--) {
+            ItemStack extracted = inventory.extractItem(slot, amount, transaction);
+            if (!extracted.isEmpty())
+                return extracted;
         }
-        return extracted;
-    }
-
-    public int getAutomationSlotCount() {
-        return 4;
+        for (int slot = 1; slot >= 0; slot--) {
+            if (!isRecoverableAutomationInput(slot))
+                continue;
+            ItemStack extracted = inventory.extractItem(slot, amount, transaction);
+            if (!extracted.isEmpty())
+                return extracted;
+        }
+        return ItemStack.EMPTY;
     }
 
     private ItemStack emptyFluidContainer(ItemStack stack, boolean simulate) {
-        FluidActionResult result = FluidUtil.tryEmptyContainer(stack, getFluidHandler(null), Integer.MAX_VALUE, null, !simulate);
-        return result.isSuccess() ? result.getResult() : stack;
+        if (stack.getCount() != 1)
+            return stack;
+        var result = BlazeComposerFluidTransfer.transfer(stack, getFluidStorage(null), simulate);
+        return result.isEmpty() ? stack : result.container();
+    }
+
+    private ItemStack emptyFluidContainer(ItemStack stack, TransactionContext transaction) {
+        if (stack.getCount() != 1)
+            return stack;
+        var result = BlazeComposerFluidTransfer.transfer(stack, getFluidStorage(null), transaction);
+        return result.isEmpty() ? stack : result.container();
     }
 
     private int getAutomationInsertionSlot(ItemStack stack) {
@@ -536,7 +575,7 @@ public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Cleara
         ItemStack stack = inventory.getStackInSlot(slot);
         if (stack.isEmpty())
             return false;
-        if (FluidUtil.getFluidHandler(stack).isPresent() || isSuperActivator(stack))
+        if (BlazeComposerFluidTransfer.hasFluidStorage(stack) || isSuperActivator(stack))
             return true;
         if (!isExpectedAutomationInput(slot, stack))
             return true;
@@ -591,7 +630,7 @@ public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Cleara
                 && isSuperActivator(stack)
                 && !superUnlocked
                 && getSuperEssence() == 0
-                && getNormalEssence() >= getNormalTank().getCapacity();
+                && CEIFluidUnits.millibuckets(getNormalEssence()) >= getNormalTank().getCapacity();
     }
 
     public ItemStack unlockSuper(ItemStack stack, boolean simulate) {
@@ -609,6 +648,18 @@ public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Cleara
                 level.playSound(null, worldPosition, SoundEvents.AMETHYST_CLUSTER_STEP, SoundSource.BLOCKS, 0.45F, 0.75F + 0.2F * level.random.nextFloat());
             }
         }
+        return remainder;
+    }
+
+    private ItemStack unlockSuper(ItemStack stack, TransactionContext transaction) {
+        if (!canUnlockSuper(stack))
+            return stack;
+        automationState.updateSnapshots(transaction);
+        ItemStack remainder = stack.copy();
+        remainder.shrink(1);
+        superUnlocked = true;
+        finishProcessing();
+        inventory.updateResult();
         return remainder;
     }
 
@@ -663,7 +714,7 @@ public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Cleara
                     CEILang.builder().add(description.copy()).style(ChatFormatting.YELLOW).forGoggles(tooltip, 1);
                 }
             }
-            int essence = superMode ? getSuperEssence() : getNormalEssence();
+            long essence = superMode ? getSuperEssence() : getNormalEssence();
             if (essence < cost) {
                 CEILang.translate(
                         superMode ? "gui.goggles.blaze_composer.insufficient_super_essence" : "gui.goggles.blaze_composer.insufficient_essence",
@@ -679,9 +730,9 @@ public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Cleara
     private void addTankTooltip(List<Component> tooltip, LangBuilder mb, String labelKey, SmartFluidTank tank, ChatFormatting amountStyle) {
         CEILang.translate(labelKey).style(ChatFormatting.GRAY).forGoggles(tooltip, 1);
         CreateLang.builder()
-                .add(CreateLang.number(tank.getFluidAmount()).add(mb).style(amountStyle))
+                .add(CreateLang.number(CEIFluidUnits.toMillibuckets(tank.getFluidAmount())).add(mb).style(amountStyle))
                 .text(ChatFormatting.GRAY, " / ")
-                .add(CreateLang.number(tank.getCapacity()).add(mb).style(ChatFormatting.DARK_GRAY))
+                .add(CreateLang.number(CEIFluidUnits.toMillibuckets(tank.getCapacity())).add(mb).style(ChatFormatting.DARK_GRAY))
                 .forGoggles(tooltip, 2);
     }
 
@@ -711,31 +762,6 @@ public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Cleara
                     .style(ChatFormatting.RED)
                     .forGoggles(tooltip);
         }
-    }
-
-    @Override
-    public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction side) {
-        if (capability == ForgeCapabilities.ITEM_HANDLER && !isRemoved())
-            return itemCapability.cast();
-        if (capability == ForgeCapabilities.FLUID_HANDLER
-                && !isRemoved()
-                && (side == null || side == Direction.DOWN))
-            return fluidCapability.cast();
-        return super.getCapability(capability, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        itemCapability.invalidate();
-        fluidCapability.invalidate();
-    }
-
-    @Override
-    public void reviveCaps() {
-        super.reviveCaps();
-        itemCapability = LazyOptional.of(() -> inventory);
-        fluidCapability = LazyOptional.of(() -> fuelHandler);
     }
 
     @Override
@@ -793,6 +819,13 @@ public class BlazeComposerBlockEntity extends BlazeBlockEntity implements Cleara
             return expected.getCount() == actual.getCount() && ItemStack.isSameItemSameTags(expected, actual);
         }
     }
+
+    private record AutomationState(
+            boolean superUnlocked,
+            int processingTime,
+            @Nullable ActiveComposing activeComposing,
+            boolean pendingBlockedSuperOperation,
+            float pendingBlockedSuperPenalty) {}
 
     private static class ModeTransform extends ValueBoxTransform.Sided {
         @Override

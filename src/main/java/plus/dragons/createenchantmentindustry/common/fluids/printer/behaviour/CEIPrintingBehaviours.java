@@ -20,7 +20,6 @@ package plus.dragons.createenchantmentindustry.common.fluids.printer.behaviour;
 
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
-import net.minecraftforge.eventbus.api.IEventBus;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
 
@@ -28,7 +27,7 @@ import plus.dragons.createenchantmentindustry.config.CEIConfig;
 public final class CEIPrintingBehaviours {
     private CEIPrintingBehaviours() {}
 
-    public static void register(IEventBus modBus) {
+    public static void register() {
         register("package_address", enabled(
                 () -> CEIConfig.fluids().enablePackageAddressPrinting.get(),
                 AddressPrintingBehaviour::create));
@@ -50,7 +49,6 @@ public final class CEIPrintingBehaviours {
         register("banner_pattern", enabled(
                 () -> CEIConfig.fluids().enableBannerPatternPrinting.get(),
                 BannerPatternPrintingBehavior::create));
-        PrintingBehaviourRegistry.register(modBus);
     }
 
     private static void register(String name, PrintingBehaviour.Provider provider) {

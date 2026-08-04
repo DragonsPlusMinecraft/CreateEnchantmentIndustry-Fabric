@@ -1,41 +1,36 @@
 {
-  "type": "forge:conditional",
-  "recipes": [
+  "fabric:load_conditions": [
     {
-      "conditions": [
-        {
-          "type": "forge:mod_loaded",
-          "modid": "apotheosis"
-        },
-        {
-          "type": "create_enchantment_industry:apotheosis_module",
-          "module": "enchantment"
-        }
-      ],
-      "recipe": {
-        "type": "minecraft:crafting_shaped",
-        "category": "misc",
-        "key": {
-          "-": {
-            "item": "create:brass_sheet"
-          },
-          "=": {
-            "item": "create:nixie_tube"
-          },
-          "o": {
-            "item": "create:spout"
-          }
-        },
-        "pattern": [
-          " - ",
-          " o ",
-          "==="
-        ],
-        "result": {
-          "item": "create_enchantment_industry:infuser"
-        },
-        "show_notification": true
-      }
+      "condition": "fabric:all_mods_loaded",
+      "values": [
+        "zenith"
+      ]
+    },
+    {
+      "condition": "create_enchantment_industry:apotheosis_module",
+      "module": "enchantment"
     }
-  ]
+  ],
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "-": {
+      "item": "create:brass_sheet"
+    },
+    "=": {
+      "item": "create:nixie_tube"
+    },
+    "o": {
+      "item": "create:spout"
+    }
+  },
+  "pattern": [
+    " - ",
+    " o ",
+    "==="
+  ],
+  "result": {
+    "item": "create_enchantment_industry:infuser"
+  },
+  "show_notification": true
 }

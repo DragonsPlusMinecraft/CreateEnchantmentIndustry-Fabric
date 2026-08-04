@@ -38,7 +38,6 @@ import net.minecraft.world.level.storage.loot.functions.CopyNbtFunction;
 import net.minecraft.world.level.storage.loot.predicates.ExplosionCondition;
 import net.minecraft.world.level.storage.loot.providers.nbt.ContextNbtProvider;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
-import net.minecraftforge.eventbus.api.IEventBus;
 import plus.dragons.createdragonsplus.data.tag.IntrinsicTagRegistry;
 import plus.dragons.createenchantmentindustry.common.item.CEIItemData;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.CEIACommon;
@@ -54,6 +53,7 @@ public class CEIABlocks {
     public static final BlockEntry<InfuserBlock> INFUSER = REGISTRATE
             .block("infuser", InfuserBlock::new)
             .initialProperties(SharedProperties::copperMetal)
+            .properties(properties -> properties.lightLevel(state -> 1))
             .blockstate((ctx, prov) -> prov.horizontalBlock(ctx.getEntry(), AssetLookup.partialBaseModel(ctx, prov)))
             .item(AssemblyOperatorBlockItem::new)
             .transform(customItemModel())
@@ -100,7 +100,7 @@ public class CEIABlocks {
 
     public static final ModTags MOD_TAGS = new ModTags();
 
-    public static void register(IEventBus modBus) {
+    public static void register() {
         REGISTRATE.registerBlockTags(MOD_TAGS);
     }
 

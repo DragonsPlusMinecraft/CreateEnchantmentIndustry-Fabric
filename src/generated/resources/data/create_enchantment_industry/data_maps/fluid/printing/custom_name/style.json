@@ -1,51 +1,51 @@
 {
   "values": {
-    "#forge:dyes/black": {
+    "#c:dyes/black": {
       "color": "#000000"
     },
-    "#forge:dyes/blue": {
+    "#c:dyes/blue": {
       "color": "#0000FF"
     },
-    "#forge:dyes/brown": {
+    "#c:dyes/brown": {
       "color": "#8B4513"
     },
-    "#forge:dyes/cyan": {
+    "#c:dyes/cyan": {
       "color": "#00FFFF"
     },
-    "#forge:dyes/gray": {
+    "#c:dyes/gray": {
       "color": "#808080"
     },
-    "#forge:dyes/green": {
+    "#c:dyes/green": {
       "color": "#00FF00"
     },
-    "#forge:dyes/light_blue": {
+    "#c:dyes/light_blue": {
       "color": "#9AC0CD"
     },
-    "#forge:dyes/light_gray": {
+    "#c:dyes/light_gray": {
       "color": "#D3D3D3"
     },
-    "#forge:dyes/lime": {
+    "#c:dyes/lime": {
       "color": "#BFFF00"
     },
-    "#forge:dyes/magenta": {
+    "#c:dyes/magenta": {
       "color": "#FF00FF"
     },
-    "#forge:dyes/orange": {
+    "#c:dyes/orange": {
       "color": "#FF681F"
     },
-    "#forge:dyes/pink": {
+    "#c:dyes/pink": {
       "color": "#FF69B4"
     },
-    "#forge:dyes/purple": {
+    "#c:dyes/purple": {
       "color": "#A020F0"
     },
-    "#forge:dyes/red": {
+    "#c:dyes/red": {
       "color": "#FF0000"
     },
-    "#forge:dyes/white": {
+    "#c:dyes/white": {
       "color": "#FFFFFF"
     },
-    "#forge:dyes/yellow": {
+    "#c:dyes/yellow": {
       "color": "#FFFF00"
     }
   }

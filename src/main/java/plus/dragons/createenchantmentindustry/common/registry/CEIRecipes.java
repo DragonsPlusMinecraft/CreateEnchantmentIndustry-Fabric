@@ -20,32 +20,32 @@ package plus.dragons.createenchantmentindustry.common.registry;
 
 import com.simibubi.create.content.processing.recipe.ProcessingRecipeSerializer;
 import java.util.function.Supplier;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
-import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import plus.dragons.createdragonsplus.common.recipe.RecipeTypeInfo;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
+import plus.dragons.createenchantmentindustry.common.crafting.CEIRecipeTypeInfo;
 import plus.dragons.createenchantmentindustry.common.fluids.printer.PrintingRecipe;
 import plus.dragons.createenchantmentindustry.common.kinetics.grindstone.GrindingRecipe;
 
-public class CEIRecipes {
-    private static final DeferredRegister<RecipeType<?>> TYPES = DeferredRegister.create(
-            Registries.RECIPE_TYPE, CEICommon.ID);
-    private static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS = DeferredRegister.create(
-            Registries.RECIPE_SERIALIZER, CEICommon.ID);
-    public static final RecipeTypeInfo<PrintingRecipe> PRINTING = register("printing", () -> new PrintingRecipe.Serializer<>(PrintingRecipe::new));
-    public static final RecipeTypeInfo<GrindingRecipe> GRINDING = register(
+public final class CEIRecipes {
+    public static final CEIRecipeTypeInfo<PrintingRecipe> PRINTING = create(
+            "printing", () -> new PrintingRecipe.Serializer<>(PrintingRecipe::new));
+    public static final CEIRecipeTypeInfo<GrindingRecipe> GRINDING = create(
             "grinding", () -> new ProcessingRecipeSerializer<>(GrindingRecipe::new));
+    private static boolean registered;
 
-    public static void register(IEventBus modBus) {
-        TYPES.register(modBus);
-        SERIALIZERS.register(modBus);
+    private CEIRecipes() {}
+
+    public static void register() {
+        if (registered)
+            return;
+        registered = true;
+        PRINTING.register();
+        GRINDING.register();
     }
 
-    private static <R extends Recipe<?>> RecipeTypeInfo<R> register(String name, Supplier<? extends RecipeSerializer<R>> serializer) {
-        return new RecipeTypeInfo<>(name, serializer, SERIALIZERS, TYPES);
+    private static <R extends Recipe<?>> CEIRecipeTypeInfo<R> create(
+            String name, Supplier<? extends RecipeSerializer<R>> serializer) {
+        return new CEIRecipeTypeInfo<>(CEICommon.asResource(name), serializer);
     }
 }

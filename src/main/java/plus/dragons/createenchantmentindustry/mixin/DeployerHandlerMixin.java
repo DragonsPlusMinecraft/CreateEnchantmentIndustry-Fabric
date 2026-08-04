@@ -18,47 +18,44 @@
 
 package plus.dragons.createenchantmentindustry.mixin;
 
-import com.llamalad7.mixinextras.sugar.Local;
 import com.simibubi.create.content.kinetics.deployer.DeployerFakePlayer;
 import com.simibubi.create.content.kinetics.deployer.DeployerHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.ForgeHooks;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import plus.dragons.createenchantmentindustry.common.kinetics.deployer.DeployerExtension;
+import plus.dragons.createenchantmentindustry.config.CEIConfig;
 
 @Mixin(value = DeployerHandler.class, remap = false)
 public class DeployerHandlerMixin {
-    @Unique
-    private static final ThreadLocal<Integer> CEI_DROPPED_EXPERIENCE = ThreadLocal.withInitial(() -> 0);
-
-    @Redirect(method = "tryHarvestBlock", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/common/ForgeHooks;onBlockBreakEvent(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/GameType;Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/core/BlockPos;)I", remap = false), remap = false)
-    private static int tryHarvestBlock$captureExperience(Level level, GameType gameType, ServerPlayer player, BlockPos pos) {
-        int experience = ForgeHooks.onBlockBreakEvent(level, gameType, player, pos);
-        if (experience >= 0 && player instanceof DeployerFakePlayer deployer)
-            experience = DeployerExtension.handleBlockExperience(deployer, experience);
-        CEI_DROPPED_EXPERIENCE.set(Math.max(0, experience));
-        return experience;
-    }
-
     @Redirect(method = "tryHarvestBlock", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;spawnAfterBreak(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/item/ItemStack;Z)V", remap = true), remap = false)
-    private static void tryHarvestBlock$applyExperience(BlockState state, ServerLevel level, BlockPos pos, ItemStack stack, boolean dropExperience, @Local(argsOnly = true) ServerPlayer player) {
-        if (!(player instanceof DeployerFakePlayer)) {
+    private static void tryHarvestBlock$applyExperience(
+            BlockState state,
+            ServerLevel level,
+            BlockPos pos,
+            ItemStack stack,
+            boolean dropExperience,
+            ServerPlayer player,
+            net.minecraft.server.level.ServerPlayerGameMode gameMode,
+            BlockPos harvestedPos) {
+        if (!(player instanceof DeployerFakePlayer deployer)) {
             state.spawnAfterBreak(level, pos, stack, dropExperience);
             return;
         }
-        state.spawnAfterBreak(level, pos, stack, false);
-        int experience = CEI_DROPPED_EXPERIENCE.get();
-        CEI_DROPPED_EXPERIENCE.remove();
-        if (experience > 0)
-            state.getBlock().popExperience(level, pos, experience);
+        if (!CEIConfig.kinetics().deployerMineDropXp.get()) {
+            state.spawnAfterBreak(level, pos, stack, false);
+            return;
+        }
+        DeployerExtension.beginBlockExperience(deployer);
+        try {
+            state.spawnAfterBreak(level, pos, stack, dropExperience);
+        } finally {
+            DeployerExtension.endBlockExperience();
+        }
     }
 }

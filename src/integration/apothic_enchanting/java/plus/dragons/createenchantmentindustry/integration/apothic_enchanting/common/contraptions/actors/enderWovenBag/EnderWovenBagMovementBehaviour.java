@@ -23,20 +23,17 @@ import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 import com.simibubi.create.content.contraptions.render.ContraptionMatrices;
 import com.simibubi.create.foundation.virtualWorld.VirtualRenderWorld;
 import net.createmod.catnip.math.VecHelper;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.NbtUtils;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.PacketDistributor;
-import plus.dragons.createenchantmentindustry.common.network.CEINetwork;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.config.CEIAConfig;
 
 public class EnderWovenBagMovementBehaviour implements MovementBehaviour {
@@ -55,9 +52,8 @@ public class EnderWovenBagMovementBehaviour implements MovementBehaviour {
                 context.stall = true;
                 context.data.remove("AnchorPos");
                 var contraption = context.contraption.entity;
-                CEINetwork.CHANNEL.send(
-                        PacketDistributor.TRACKING_CHUNK.with(
-                                () -> ((ServerLevel) context.world).getChunkAt(context.contraption.entity.blockPosition())),
+                ContraptionEnderWovenBagPocketChangePacket.sendToTracking(
+                        contraption,
                         new ContraptionEnderWovenBagPocketChangePacket(contraption.getId(), context.localPos, true));
                 return;
             }
@@ -95,10 +91,10 @@ public class EnderWovenBagMovementBehaviour implements MovementBehaviour {
                         entity.remove(Entity.RemovalReason.DISCARDED);
                         if (entities.full()) {
                             var contraption = context.contraption.entity;
-                            CEINetwork.CHANNEL.send(
-                                    PacketDistributor.TRACKING_CHUNK.with(
-                                            () -> ((ServerLevel) context.world).getChunkAt(context.contraption.entity.blockPosition())),
-                                    new ContraptionEnderWovenBagPocketChangePacket(contraption.getId(), context.localPos, false));
+                            ContraptionEnderWovenBagPocketChangePacket.sendToTracking(
+                                    contraption,
+                                    new ContraptionEnderWovenBagPocketChangePacket(
+                                            contraption.getId(), context.localPos, false));
                             break;
                         }
 
@@ -140,7 +136,7 @@ public class EnderWovenBagMovementBehaviour implements MovementBehaviour {
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public void renderInContraption(MovementContext context, VirtualRenderWorld renderWorld,
             ContraptionMatrices matrices, MultiBufferSource buffer) {
         EnderWovenBagRenderer.renderInContraption(context, renderWorld, matrices, buffer);
@@ -181,7 +177,7 @@ public class EnderWovenBagMovementBehaviour implements MovementBehaviour {
         context.temporaryData = entities;
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     static boolean renderFull(MovementContext context) {
         return context.data.contains("RenderFull");
     }

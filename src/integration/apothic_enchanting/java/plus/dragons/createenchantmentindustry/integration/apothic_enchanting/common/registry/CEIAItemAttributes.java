@@ -20,36 +20,36 @@ package plus.dragons.createenchantmentindustry.integration.apothic_enchanting.co
 
 import static plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.CEIACommon.REGISTRATE;
 
-import com.simibubi.create.api.registry.CreateRegistries;
+import com.simibubi.create.api.registry.CreateBuiltInRegistries;
 import com.simibubi.create.content.logistics.item.filter.attribute.ItemAttributeType;
 import com.simibubi.create.content.logistics.item.filter.attribute.SingletonItemAttribute;
 import java.util.function.BiPredicate;
+import java.util.function.Supplier;
+import net.minecraft.core.Registry;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.CEIACommon;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.processing.infuser.InfuserBlockEntity;
 
 public class CEIAItemAttributes {
-    private static final DeferredRegister<ItemAttributeType> ITEM_ATTRIBUTES = DeferredRegister
-            .create(CreateRegistries.ITEM_ATTRIBUTE_TYPE, CEIACommon.ID);
-
-    public static final RegistryObject<ItemAttributeType> CAN_BE_INFUSED = attribute("can_be_infused",
+    public static final Supplier<ItemAttributeType> CAN_BE_INFUSED = attribute("can_be_infused",
             "can be Infused",
             "cannot be Infused",
             InfuserBlockEntity::canBeInfused);
 
-    private static RegistryObject<ItemAttributeType> attribute(String name, String description, String invertedDescription, BiPredicate<ItemStack, Level> predicate) {
+    private static Supplier<ItemAttributeType> attribute(
+            String name, String description, String invertedDescription, BiPredicate<ItemStack, Level> predicate) {
         String descriptionKey = "create.item_attributes." + CEIACommon.ID + "." + name;
         String invertedDescriptionKey = descriptionKey + ".inverted";
         REGISTRATE.addRawLang(descriptionKey, description);
         REGISTRATE.addRawLang(invertedDescriptionKey, invertedDescription);
-        return ITEM_ATTRIBUTES.register(name, () -> new SingletonItemAttribute.Type(type -> new SingletonItemAttribute(type, predicate, CEIACommon.ID + "." + name)));
+        ItemAttributeType type = Registry.register(
+                CreateBuiltInRegistries.ITEM_ATTRIBUTE_TYPE,
+                CEIACommon.REGISTRATE.asResource(name),
+                new SingletonItemAttribute.Type(attributeType -> new SingletonItemAttribute(
+                        attributeType, predicate, CEIACommon.ID + "." + name)));
+        return () -> type;
     }
 
-    public static void register(IEventBus modBus) {
-        ITEM_ATTRIBUTES.register(modBus);
-    }
+    public static void register() {}
 }

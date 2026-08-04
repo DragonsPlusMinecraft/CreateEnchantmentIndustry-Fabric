@@ -20,6 +20,7 @@ package plus.dragons.createenchantmentindustry.integration.apothic_enchanting.co
 
 import com.simibubi.create.foundation.block.IBE;
 import dev.shadowsoffire.apotheosis.ench.api.IEnchantingBlock;
+import io.github.fabricators_of_create.porting_lib.enchant.EnchantmentBonusBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -36,7 +37,8 @@ import org.jetbrains.annotations.Nullable;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.registry.CEIABlockEntities;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.config.CEIAConfig;
 
-public class CreativeBookshelfBlock extends HorizontalDirectionalBlock implements IEnchantingBlock, IBE<CreativeBookshelfBlockEntity> {
+public class CreativeBookshelfBlock extends HorizontalDirectionalBlock
+        implements IEnchantingBlock, EnchantmentBonusBlock, IBE<CreativeBookshelfBlockEntity> {
     public CreativeBookshelfBlock(Properties props) {
         super(props);
         registerDefaultState(defaultBlockState().setValue(FACING, Direction.NORTH));

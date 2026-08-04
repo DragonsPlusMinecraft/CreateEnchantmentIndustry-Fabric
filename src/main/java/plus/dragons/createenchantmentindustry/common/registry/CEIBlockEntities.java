@@ -25,7 +25,8 @@ import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import com.simibubi.create.content.kinetics.base.SingleAxisRotatingVisual;
 import com.simibubi.create.foundation.blockEntity.renderer.SmartBlockEntityRenderer;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
-import net.minecraftforge.eventbus.api.IEventBus;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
 import plus.dragons.createdragonsplus.common.processing.blaze.BlazeBlockVisual;
 import plus.dragons.createenchantmentindustry.client.model.CEIPartialModels;
 import plus.dragons.createenchantmentindustry.common.fluids.experience.ExperienceHatchBlockEntity;
@@ -88,7 +89,21 @@ public class CEIBlockEntities {
             .validBlock(CEIBlocks.EXPERIENCE_LANTERN)
             .register();
 
-    public static void register(IEventBus modBus) {
-        // Forge 1.20.1 block entities expose capabilities from getCapability directly.
+    public static void register() {
+        // Force Registrate declarations to load before CEICommon's registration pass.
+    }
+
+    public static void registerStorageProviders() {
+        FluidStorage.SIDED.registerForBlockEntity(GrindstoneDrainBlockEntity::getFluidStorage, GRINDSTONE_DRAIN.get());
+        ItemStorage.SIDED.registerForBlockEntity(GrindstoneDrainBlockEntity::getItemStorage, GRINDSTONE_DRAIN.get());
+        FluidStorage.SIDED.registerForBlockEntity(PrinterBlockEntity::getFluidStorage, PRINTER.get());
+        FluidStorage.SIDED.registerForBlockEntity(BlazeEnchanterBlockEntity::getFluidStorage, BLAZE_ENCHANTER.get());
+        FluidStorage.SIDED.registerForBlockEntity(BlazeForgerBlockEntity::getFluidStorage, BLAZE_FORGER.get());
+        FluidStorage.SIDED.registerForBlockEntity(
+                ClassicBlazeEnchanterBlockEntity::getFluidStorage,
+                CLASSIC_BLAZE_ENCHANTER.get());
+        FluidStorage.SIDED.registerForBlockEntity(
+                ExperienceLanternBlockEntity::getFluidStorage,
+                EXPERIENCE_LANTERN.get());
     }
 }

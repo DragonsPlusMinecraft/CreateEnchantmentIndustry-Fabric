@@ -37,15 +37,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import plus.dragons.createdragonsplus.common.registry.CDPItems;
 import plus.dragons.createenchantmentindustry.client.ponder.CEIPonderScenes;
 import plus.dragons.createenchantmentindustry.common.fluids.printer.PrinterBehaviour;
 import plus.dragons.createenchantmentindustry.common.fluids.printer.PrinterBlockEntity;
 import plus.dragons.createenchantmentindustry.common.registry.CEIFluids;
 import plus.dragons.createenchantmentindustry.util.CEIDyeFluids;
+import plus.dragons.createenchantmentindustry.util.CEITransfer;
 
 public class MiscScene {
     public static void experienceHatch(SceneBuilder builder, SceneBuildingUtil util) {
@@ -69,12 +67,14 @@ public class MiscScene {
         scene.idle(10);
         scene.world().modifyBlockEntity(util.grid().at(2, 3, 2), FluidTankBlockEntity.class, be -> {
             var ctrl = be.getControllerBE();
-            if (ctrl != null) ctrl.getTankInventory().fill(new FluidStack(CEIFluids.EXPERIENCE.get(), 10000), IFluidHandler.FluidAction.EXECUTE);
+            if (ctrl != null)
+                CEITransfer.insertMillibuckets(ctrl.getTankInventory(), CEIFluids.EXPERIENCE.getSource(), 10000, false);
         });
         scene.idle(50);
 
         scene.world().modifyBlockEntity(util.grid().at(3, 2, 1), BasinBlockEntity.class,
-                be -> be.inputTank.getPrimaryHandler().fill(new FluidStack(CEIFluids.EXPERIENCE.get(), 1000), IFluidHandler.FluidAction.EXECUTE));
+                be -> CEITransfer.insertMillibuckets(
+                        be.inputTank.getPrimaryHandler(), CEIFluids.EXPERIENCE.getSource(), 1000, false));
         scene.idle(10);
         scene.world().showSection(util.select().fromTo(3, 2, 1, 2, 2, 1), Direction.UP);
         scene.idle(10);
@@ -87,7 +87,8 @@ public class MiscScene {
         scene.overlay().showControls(frontVec, Pointing.UP, 50).rightClick().whileSneaking();
         scene.idle(30);
         scene.world().modifyBlockEntity(util.grid().at(3, 2, 1), BasinBlockEntity.class,
-                be -> be.inputTank.getPrimaryHandler().drain(new FluidStack(CEIFluids.EXPERIENCE.get(), 1000), IFluidHandler.FluidAction.EXECUTE));
+                be -> CEITransfer.extractMillibuckets(
+                        be.inputTank.getPrimaryHandler(), CEIFluids.EXPERIENCE.getSource(), 1000, false));
         scene.idle(40);
 
         scene.overlay().showText(80)
@@ -98,7 +99,8 @@ public class MiscScene {
         for (int i = 0; i < 12; i++) {
             scene.world().modifyBlockEntity(util.grid().at(2, 3, 2), FluidTankBlockEntity.class, be -> {
                 var ctrl = be.getControllerBE();
-                if (ctrl != null) ctrl.getTankInventory().fill(new FluidStack(CEIFluids.EXPERIENCE.get(), 1000), IFluidHandler.FluidAction.EXECUTE);
+                if (ctrl != null)
+                    CEITransfer.insertMillibuckets(ctrl.getTankInventory(), CEIFluids.EXPERIENCE.getSource(), 1000, false);
             });
             scene.idle(5);
         }
@@ -115,7 +117,8 @@ public class MiscScene {
 
         scene.world().modifyBlockEntity(util.grid().at(1, 1, 1), FluidTankBlockEntity.class, be -> {
             var ctrl = be.getControllerBE();
-            if (ctrl != null) ctrl.getTankInventory().fill(new FluidStack(CEIDyeFluids.get(DyeColor.CYAN), 36000), IFluidHandler.FluidAction.EXECUTE);
+            if (ctrl != null)
+                CEITransfer.insertMillibuckets(ctrl.getTankInventory(), CEIDyeFluids.get(DyeColor.CYAN), 36000, false);
         });
         scene.idle(10);
         scene.overlay().showText(40)
@@ -137,7 +140,8 @@ public class MiscScene {
         for (int i = 0; i < 12; i++) {
             scene.world().modifyBlockEntity(util.grid().at(1, 1, 1), FluidTankBlockEntity.class, be -> {
                 var ctrl = be.getControllerBE();
-                if (ctrl != null) ctrl.getTankInventory().drain(new FluidStack(CEIDyeFluids.get(DyeColor.CYAN), 3000), IFluidHandler.FluidAction.EXECUTE);
+                if (ctrl != null)
+                    CEITransfer.extractMillibuckets(ctrl.getTankInventory(), CEIDyeFluids.get(DyeColor.CYAN), 3000, false);
             });
             scene.idle(10);
         }
@@ -194,7 +198,8 @@ public class MiscScene {
         scene.world().setKineticSpeed(util.select().position(3, 3, 2), 128f);
         scene.idle(20);
         scene.world().modifyBlockEntity(util.grid().at(2, 3, 2), PrinterBlockEntity.class,
-                be -> be.getCapability(ForgeCapabilities.FLUID_HANDLER).ifPresent(handler -> handler.fill(new FluidStack(CEIDyeFluids.get(DyeColor.BLACK), 3000), IFluidHandler.FluidAction.EXECUTE)));
+                be -> CEITransfer.insertMillibuckets(
+                        be.getFluidStorage(null), CEIDyeFluids.get(DyeColor.BLACK), 3000, false));
         scene.idle(40);
 
         scene.overlay().showText(80)
@@ -241,10 +246,9 @@ public class MiscScene {
             printer.setFilter(enchantedBook);
         });
         scene.world().modifyBlockEntity(util.grid().at(2, 3, 2), PrinterBlockEntity.class, be -> {
-            be.getCapability(ForgeCapabilities.FLUID_HANDLER).ifPresent(handler -> {
-                handler.drain(3000, IFluidHandler.FluidAction.EXECUTE);
-                handler.fill(new FluidStack(CEIFluids.EXPERIENCE.get(), 3000), IFluidHandler.FluidAction.EXECUTE);
-            });
+            var storage = be.getFluidStorage(null);
+            CEITransfer.extractMillibuckets(storage, CEIDyeFluids.get(DyeColor.BLACK), 3000, false);
+            CEITransfer.insertMillibuckets(storage, CEIFluids.EXPERIENCE.getSource(), 3000, false);
         });
         scene.idle(10);
         scene.world().modifyBlockEntity(util.grid().at(2, 1, 2), DepotBlockEntity.class,
@@ -298,12 +302,14 @@ public class MiscScene {
         scene.idle(30);
         scene.world().modifyBlockEntity(util.grid().at(2, 1, 3), FluidTankBlockEntity.class, be -> {
             var ctrl = be.getControllerBE();
-            if (ctrl != null) ctrl.getTankInventory().fill(new FluidStack(CEIFluids.EXPERIENCE.get(), 2000), IFluidHandler.FluidAction.EXECUTE);
+            if (ctrl != null)
+                CEITransfer.insertMillibuckets(ctrl.getTankInventory(), CEIFluids.EXPERIENCE.getSource(), 2000, false);
         });
         scene.idle(40);
         scene.world().modifyBlockEntity(util.grid().at(2, 1, 3), FluidTankBlockEntity.class, be -> {
             var ctrl = be.getControllerBE();
-            if (ctrl != null) ctrl.getTankInventory().fill(new FluidStack(CEIFluids.EXPERIENCE.get(), 2000), IFluidHandler.FluidAction.EXECUTE);
+            if (ctrl != null)
+                CEITransfer.insertMillibuckets(ctrl.getTankInventory(), CEIFluids.EXPERIENCE.getSource(), 2000, false);
         });
         scene.idle(70);
         scene.world().setKineticSpeed(util.select().fromTo(2, 4, 2, 2, 5, 2), 0);

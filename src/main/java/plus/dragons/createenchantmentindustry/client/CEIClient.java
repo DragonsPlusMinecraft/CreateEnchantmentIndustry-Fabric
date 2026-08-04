@@ -18,52 +18,68 @@
 
 package plus.dragons.createenchantmentindustry.client;
 
-import com.simibubi.create.foundation.item.render.SimpleCustomRenderer;
-import java.util.function.Consumer;
+import com.simibubi.create.foundation.item.render.CustomRenderedItemModelRenderer;
+import com.simibubi.create.foundation.item.render.CustomRenderedItems;
 import net.createmod.ponder.foundation.PonderIndex;
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import plus.dragons.createenchantmentindustry.client.model.CEIPartialModels;
 import plus.dragons.createenchantmentindustry.client.ponder.CEIPonderPlugin;
-import plus.dragons.createenchantmentindustry.common.processing.BlazeCustomRenderedBlockItem.Renderer;
 import plus.dragons.createenchantmentindustry.common.processing.classic_enchanter.ClassicBlazeEnchanterItemRenderer;
 import plus.dragons.createenchantmentindustry.common.processing.enchanter.BlazeEnchanterItemRenderer;
 import plus.dragons.createenchantmentindustry.common.processing.forger.BlazeForgerItemRenderer;
+import plus.dragons.createenchantmentindustry.common.registry.CEIBlocks;
 import plus.dragons.createenchantmentindustry.common.registry.CEIDataMaps;
+import plus.dragons.createenchantmentindustry.integration.ModIntegration;
 
-public class CEIClient {
-    public CEIClient() {
-        IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
-        // CEIPartialModels must be registered here,
-        // or when PartialModelEventHandler#onRegisterAdditional triggered,
-        // PartialModel.ALL won't include all partial model in 'some cases'
-        // AllPartialModels#ini does not do this since AllPartialModels is already triggered at AllBlocks.TRACK
-        // Issue: https://github.com/Creators-of-Create/Create/issues/8259
+public final class CEIClient implements ClientModInitializer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CEIClient.class);
+
+    @Override
+    public void onInitializeClient() {
+        CEIClientNetwork.register();
         CEIPartialModels.register();
-        modBus.addListener(CEIClient::setup);
-        MinecraftForge.EVENT_BUS.addListener(CEIClient::logout);
-    }
-
-    public static void setup(final FMLClientSetupEvent event) {
         PonderIndex.addPlugin(new CEIPonderPlugin());
+        BlockRenderLayerMap.INSTANCE.putBlocks(
+                RenderType.cutoutMipped(),
+                CEIBlocks.BLAZE_ENCHANTER.get(),
+                CEIBlocks.CLASSIC_BLAZE_ENCHANTER.get(),
+                CEIBlocks.BLAZE_FORGER.get(),
+                CEIBlocks.EXPERIENCE_LANTERN.get());
+        registerCustomRenderer(CEIBlocks.BLAZE_ENCHANTER.asItem(), new BlazeEnchanterItemRenderer());
+        registerCustomRenderer(CEIBlocks.BLAZE_FORGER.asItem(), new BlazeForgerItemRenderer());
+        registerCustomRenderer(CEIBlocks.CLASSIC_BLAZE_ENCHANTER.asItem(), new ClassicBlazeEnchanterItemRenderer());
+        initializeIntegrationClient(
+                ModIntegration.APOTHEOSIS,
+                "plus.dragons.createenchantmentindustry.integration.apotheosis.client.CEIAXClient");
+        initializeIntegrationClient(
+                ModIntegration.APOTHIC_ENCHANTING,
+                "plus.dragons.createenchantmentindustry.integration.apothic_enchanting.client.CEIAClient");
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> CEIDataMaps.clearClientSnapshot());
     }
 
-    private static void logout(ClientPlayerNetworkEvent.LoggingOut event) {
-        CEIDataMaps.clearClientSnapshot();
+    private static void registerCustomRenderer(Item item, CustomRenderedItemModelRenderer renderer) {
+        BuiltinItemRendererRegistry.INSTANCE.register(item, renderer);
+        CustomRenderedItems.register(item);
     }
 
-    public static void initializeBlazeItemRenderer(
-            Item item, Renderer renderer, Consumer<IClientItemExtensions> consumer) {
-        var itemRenderer = switch (renderer) {
-            case ENCHANTER -> new BlazeEnchanterItemRenderer();
-            case FORGER -> new BlazeForgerItemRenderer();
-            case CLASSIC_ENCHANTER -> new ClassicBlazeEnchanterItemRenderer();
-        };
-        consumer.accept(SimpleCustomRenderer.create(item, itemRenderer));
+    private static void initializeIntegrationClient(ModIntegration integration, String className) {
+        if (!integration.enabled())
+            return;
+        try {
+            Class.forName(className, true, CEIClient.class.getClassLoader())
+                    .getMethod("initialize")
+                    .invoke(null);
+        } catch (ClassNotFoundException ignored) {
+            LOGGER.debug("{} client integration source set is not present", integration.id());
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            throw new IllegalStateException("Failed to initialize " + integration.id() + " client integration", exception);
+        }
     }
 }

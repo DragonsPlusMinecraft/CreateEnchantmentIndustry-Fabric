@@ -34,6 +34,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import net.createmod.catnip.math.VecHelper;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -52,10 +54,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createdragonsplus.common.advancements.AdvancementBehaviour;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.registry.CEIAFluids;
@@ -296,17 +294,8 @@ public class InfuserBlockEntity extends SmartBlockEntity implements IHaveGoggleI
         super.write(compound, clientPacket);
     }
 
-    public @Nullable IFluidHandler getFluidHandler(@Nullable Direction side) {
-        if (side != Direction.DOWN)
-            return tank.getCapability().orElse(null);
-        return null;
-    }
-
-    @Override
-    public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction side) {
-        if (capability == ForgeCapabilities.FLUID_HANDLER && tank != null && side != Direction.DOWN)
-            return tank.getCapability().cast();
-        return super.getCapability(capability, side);
+    public @Nullable Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
+        return tank != null && side != Direction.DOWN ? tank.getCapability() : null;
     }
 
     public void setInfusionStats(InfusionStats infusionStats) { // Only used by ponder!
@@ -321,7 +310,7 @@ public class InfuserBlockEntity extends SmartBlockEntity implements IHaveGoggleI
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         assert level != null;
-        containedFluidTooltip(tooltip, isPlayerSneaking, tank.getCapability().cast());
+        containedFluidTooltip(tooltip, isPlayerSneaking, tank.getCapability());
         if (!tank.getPrimaryHandler().isEmpty()
                 && !tank.getPrimaryHandler().getFluid().getFluid().is(CEIAFluids.MOD_TAGS.infusing_ingredients))
             CEIALang.translate("gui.goggles.infuser.incorrect_liquid").style(ChatFormatting.RED).forGoggles(tooltip, 1);

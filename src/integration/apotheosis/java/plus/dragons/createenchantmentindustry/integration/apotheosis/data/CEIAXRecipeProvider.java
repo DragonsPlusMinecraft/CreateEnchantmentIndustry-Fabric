@@ -40,71 +40,76 @@ import com.simibubi.create.content.kinetics.deployer.DeployerApplicationRecipe;
 import com.simibubi.create.content.kinetics.press.PressingRecipe;
 import dev.shadowsoffire.apotheosis.adventure.Adventure;
 import java.util.function.Consumer;
-import net.minecraft.data.PackOutput;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeCategory;
-import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.SmithingTransformRecipeBuilder;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.common.crafting.ConditionalRecipe;
 import plus.dragons.createdragonsplus.data.recipe.CreateRecipeBuilders;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
 import plus.dragons.createenchantmentindustry.common.crafting.CEIApotheosisModuleCondition;
 import plus.dragons.createenchantmentindustry.integration.ModIntegration;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.registry.CEIAXFluids;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 
-public class CEIAXRecipeProvider extends RecipeProvider {
-    public CEIAXRecipeProvider(PackOutput output) {
+public class CEIAXRecipeProvider extends FabricRecipeProvider {
+    public CEIAXRecipeProvider(FabricDataOutput output) {
         super(output);
     }
 
     @Override
-    protected void buildRecipes(Consumer<FinishedRecipe> output) {
+    public String getName() {
+        return "Create: Enchantment Industry Zenith Adventure Recipes";
+    }
+
+    @Override
+    public void buildRecipes(Consumer<FinishedRecipe> output) {
         CreateRecipeBuilders.mixing(CEICommon.asResource("dissolve_common_material"))
                 .withCondition(ModIntegration.APOTHEOSIS.condition())
                 .withCondition(CEIApotheosisModuleCondition.ADVENTURE)
-                .require(Adventure.Items.COMMON_MATERIAL.get())
-                .output(CEIAXFluids.APOTHEOTIC_ESSENCE.get(), 1)
+                .require(Adventure.Items.COMMON_MATERIAL)
+                .output(CEIAXFluids.APOTHEOTIC_ESSENCE.getSource(), CEIFluidUnits.millibuckets(1))
                 .duration(5)
                 .build(output);
 
         CreateRecipeBuilders.mixing(CEICommon.asResource("dissolve_uncommon_material"))
                 .withCondition(ModIntegration.APOTHEOSIS.condition())
                 .withCondition(CEIApotheosisModuleCondition.ADVENTURE)
-                .require(Adventure.Items.UNCOMMON_MATERIAL.get())
-                .output(CEIAXFluids.APOTHEOTIC_ESSENCE.get(), 3)
+                .require(Adventure.Items.UNCOMMON_MATERIAL)
+                .output(CEIAXFluids.APOTHEOTIC_ESSENCE.getSource(), CEIFluidUnits.millibuckets(3))
                 .duration(6)
                 .build(output);
 
         CreateRecipeBuilders.mixing(CEICommon.asResource("dissolve_rare_material"))
                 .withCondition(ModIntegration.APOTHEOSIS.condition())
                 .withCondition(CEIApotheosisModuleCondition.ADVENTURE)
-                .require(Adventure.Items.RARE_MATERIAL.get())
-                .output(CEIAXFluids.APOTHEOTIC_ESSENCE.get(), 9)
+                .require(Adventure.Items.RARE_MATERIAL)
+                .output(CEIAXFluids.APOTHEOTIC_ESSENCE.getSource(), CEIFluidUnits.millibuckets(9))
                 .duration(7)
                 .build(output);
 
         CreateRecipeBuilders.mixing(CEICommon.asResource("dissolve_epic_material"))
                 .withCondition(ModIntegration.APOTHEOSIS.condition())
                 .withCondition(CEIApotheosisModuleCondition.ADVENTURE)
-                .require(Adventure.Items.EPIC_MATERIAL.get())
-                .output(CEIAXFluids.APOTHEOTIC_ESSENCE.get(), 27)
+                .require(Adventure.Items.EPIC_MATERIAL)
+                .output(CEIAXFluids.APOTHEOTIC_ESSENCE.getSource(), CEIFluidUnits.millibuckets(27))
                 .duration(8)
                 .build(output);
 
         CreateRecipeBuilders.mixing(CEICommon.asResource("dissolve_mythic_material"))
                 .withCondition(ModIntegration.APOTHEOSIS.condition())
                 .withCondition(CEIApotheosisModuleCondition.ADVENTURE)
-                .require(Adventure.Items.MYTHIC_MATERIAL.get())
-                .output(CEIAXFluids.APOTHEOTIC_ESSENCE.get(), 81)
+                .require(Adventure.Items.MYTHIC_MATERIAL)
+                .output(CEIAXFluids.APOTHEOTIC_ESSENCE.getSource(), CEIFluidUnits.millibuckets(81))
                 .duration(8)
                 .build(output);
 
         CreateRecipeBuilders.mixing(CEICommon.asResource("dissolve_gem_dust"))
                 .withCondition(ModIntegration.APOTHEOSIS.condition())
                 .withCondition(CEIApotheosisModuleCondition.ADVENTURE)
-                .require(Adventure.Items.GEM_DUST.get())
-                .output(CEIAXFluids.CRYSTAL_ESSENCE.get(), 10)
+                .require(Adventure.Items.GEM_DUST)
+                .output(CEIAXFluids.CRYSTAL_ESSENCE.getSource(), CEIFluidUnits.millibuckets(10))
                 .duration(8)
                 .build(output);
 
@@ -112,7 +117,7 @@ public class CEIAXRecipeProvider extends RecipeProvider {
                 .define('=', ORANGE_NIXIE_TUBE)
                 .define('o', BRASS_SHEET)
                 .define('x', AMETHYST_SHARD)
-                .define('S', Adventure.Items.MYTHIC_MATERIAL.get())
+                .define('S', Adventure.Items.MYTHIC_MATERIAL)
                 .pattern("oxo")
                 .pattern(" - ")
                 .pattern("S=S")
@@ -124,7 +129,7 @@ public class CEIAXRecipeProvider extends RecipeProvider {
 
         shaped().define('o', BRASS_INGOT)
                 .define('x', AMETHYST_SHARD)
-                .define('S', Adventure.Items.GEM_DUST.get())
+                .define('S', Adventure.Items.GEM_DUST)
                 .pattern("xxx")
                 .pattern("oSo")
                 .pattern("xxx")
@@ -140,13 +145,10 @@ public class CEIAXRecipeProvider extends RecipeProvider {
                 .addOutput(BRASS_AFFIX_TEMPLATE, 1)
                 .loops(1)
                 .addStep(DeployerApplicationRecipe::new, rb -> rb.require(COPPER_SHEET))
-                .addStep(DeployerApplicationRecipe::new, rb -> rb.require(Adventure.Items.COMMON_MATERIAL.get()))
+                .addStep(DeployerApplicationRecipe::new, rb -> rb.require(Adventure.Items.COMMON_MATERIAL))
                 .addStep(PressingRecipe::new, rb -> rb);
-        ConditionalRecipe.builder()
-                .addCondition(ModIntegration.APOTHEOSIS.condition())
-                .addCondition(CEIApotheosisModuleCondition.ADVENTURE)
-                .addRecipe(brassTemplate::build)
-                .build(output, BRASS_AFFIX_TEMPLATE.getId().withPrefix("sequenced_assembly/"));
+        brassTemplate.build(withConditions(
+                output, ModIntegration.APOTHEOSIS.condition(), CEIApotheosisModuleCondition.ADVENTURE));
 
         var crystalTemplate = CreateRecipeBuilders.sequencedAssembly(CRYSTAL_AFFIX_TEMPLATE.getId())
                 .require(PAPER)
@@ -154,14 +156,12 @@ public class CEIAXRecipeProvider extends RecipeProvider {
                 .addOutput(CRYSTAL_AFFIX_TEMPLATE, 1)
                 .loops(1)
                 .addStep(DeployerApplicationRecipe::new, rb -> rb.require(BRASS_SHEET))
-                .addStep(FillingRecipe::new, rb -> rb.require(CEIAXFluids.CRYSTAL_ESSENCE.get(), 50))
+                .addStep(FillingRecipe::new, rb -> rb.require(
+                        CEIAXFluids.CRYSTAL_ESSENCE.getSource(), CEIFluidUnits.millibuckets(50)))
                 .addStep(DeployerApplicationRecipe::new, rb -> rb.require(AMETHYST_SHARD))
                 .addStep(PressingRecipe::new, rb -> rb);
-        ConditionalRecipe.builder()
-                .addCondition(ModIntegration.APOTHEOSIS.condition())
-                .addCondition(CEIApotheosisModuleCondition.ADVENTURE)
-                .addRecipe(crystalTemplate::build)
-                .build(output, CRYSTAL_AFFIX_TEMPLATE.getId().withPrefix("sequenced_assembly/"));
+        crystalTemplate.build(withConditions(
+                output, ModIntegration.APOTHEOSIS.condition(), CEIApotheosisModuleCondition.ADVENTURE));
 
         var apotheoticTemplate = CreateRecipeBuilders.sequencedAssembly(APOTHEOTIC_AFFIX_TEMPLATE.getId())
                 .require(PAPER)
@@ -169,28 +169,26 @@ public class CEIAXRecipeProvider extends RecipeProvider {
                 .addOutput(APOTHEOTIC_AFFIX_TEMPLATE, 1)
                 .loops(1)
                 .addStep(DeployerApplicationRecipe::new, rb -> rb.require(STURDY_SHEET))
-                .addStep(FillingRecipe::new, rb -> rb.require(CEIAXFluids.APOTHEOTIC_ESSENCE.get(), 50))
-                .addStep(DeployerApplicationRecipe::new, rb -> rb.require(Adventure.Items.MYTHIC_MATERIAL.get()))
+                .addStep(FillingRecipe::new, rb -> rb.require(
+                        CEIAXFluids.APOTHEOTIC_ESSENCE.getSource(), CEIFluidUnits.millibuckets(50)))
+                .addStep(DeployerApplicationRecipe::new, rb -> rb.require(Adventure.Items.MYTHIC_MATERIAL))
                 .addStep(PressingRecipe::new, rb -> rb);
-        ConditionalRecipe.builder()
-                .addCondition(ModIntegration.APOTHEOSIS.condition())
-                .addCondition(CEIApotheosisModuleCondition.ADVENTURE)
-                .addRecipe(apotheoticTemplate::build)
-                .build(output, APOTHEOTIC_AFFIX_TEMPLATE.getId().withPrefix("sequenced_assembly/"));
+        apotheoticTemplate.build(withConditions(
+                output, ModIntegration.APOTHEOSIS.condition(), CEIApotheosisModuleCondition.ADVENTURE));
 
         var blazeComposerId = BLAZE_COMPOSER.getId().withPrefix("smithing/");
-        ConditionalRecipe.builder()
-                .addCondition(ModIntegration.APOTHEOSIS.condition())
-                .addCondition(CEIApotheosisModuleCondition.ADVENTURE)
-                .addRecipe(consumer -> SmithingTransformRecipeBuilder.smithing(
-                        Ingredient.of(BLAZE_UPGRADE_SMITHING_TEMPLATE),
-                        Ingredient.of(BLAZE_BURNER),
-                        Ingredient.of(AFFIX_AUGMENTOR),
-                        RecipeCategory.MISC,
-                        BLAZE_COMPOSER.asItem())
-                        .unlocks("has_affix_augmentor", has(AFFIX_AUGMENTOR))
-                        .save(consumer, blazeComposerId))
-                .generateAdvancement()
-                .build(output, blazeComposerId);
+        SmithingTransformRecipeBuilder.smithing(
+                Ingredient.of(BLAZE_UPGRADE_SMITHING_TEMPLATE),
+                Ingredient.of(BLAZE_BURNER),
+                Ingredient.of(AFFIX_AUGMENTOR),
+                RecipeCategory.MISC,
+                BLAZE_COMPOSER.asItem())
+                .unlocks("has_affix_augmentor", has(AFFIX_AUGMENTOR))
+                .save(
+                        withConditions(
+                                output,
+                                ModIntegration.APOTHEOSIS.condition(),
+                                CEIApotheosisModuleCondition.ADVENTURE),
+                        blazeComposerId);
     }
 }

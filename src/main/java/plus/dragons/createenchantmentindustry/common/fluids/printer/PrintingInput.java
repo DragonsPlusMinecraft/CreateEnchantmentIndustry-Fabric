@@ -18,10 +18,10 @@
 
 package plus.dragons.createenchantmentindustry.common.fluids.printer;
 
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
 
 /** Immutable two-item recipe input with an additional fluid stack. */
 public final class PrintingInput implements Container {

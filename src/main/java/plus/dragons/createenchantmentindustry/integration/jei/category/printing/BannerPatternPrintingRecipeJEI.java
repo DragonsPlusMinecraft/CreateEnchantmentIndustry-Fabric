@@ -19,7 +19,8 @@
 package plus.dragons.createenchantmentindustry.integration.jei.category.printing;
 
 import com.mojang.serialization.MapCodec;
-import mezz.jei.api.forge.ForgeTypes;
+import com.simibubi.create.compat.jei.category.CreateRecipeCategory;
+import mezz.jei.api.fabric.constants.FabricTypes;
 import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
 import mezz.jei.api.gui.ingredient.IRecipeSlotDrawable;
 import mezz.jei.api.recipe.IFocusGroup;
@@ -35,11 +36,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.block.entity.BannerBlockEntity;
-import net.minecraftforge.fluids.FluidStack;
 import plus.dragons.createdragonsplus.util.Pairs;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
 import plus.dragons.createenchantmentindustry.common.registry.CEIDataMaps;
 import plus.dragons.createenchantmentindustry.util.CEIDyeFluids;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 import plus.dragons.createenchantmentindustry.util.CEILang;
 
 public enum BannerPatternPrintingRecipeJEI implements PrintingRecipeJEI {
@@ -73,7 +74,7 @@ public enum BannerPatternPrintingRecipeJEI implements PrintingRecipeJEI {
 
     @Override
     public void setFluid(IRecipeSlotBuilder slot) {
-        CEIDataMaps.getSourceFluidEntries(CEIDataMaps.PRINTING_BANNER_PATTERN_INGREDIENT)
+        CEIDataMaps.getSourceFluidAmountEntries(CEIDataMaps.PRINTING_BANNER_PATTERN_INGREDIENT)
                 .filter(Pairs.filterFirst(fluid -> CEIDyeFluids.color(fluid).isPresent()))
                 .forEach(Pairs.accept(slot::addFluidStack));
     }
@@ -94,7 +95,9 @@ public enum BannerPatternPrintingRecipeJEI implements PrintingRecipeJEI {
 
     @Override
     public void onDisplayedIngredientsUpdate(IRecipeSlotDrawable baseSlot, IRecipeSlotDrawable templateSlot, IRecipeSlotDrawable fluidSlot, IRecipeSlotDrawable outputSlot, IFocusGroup focuses) {
-        var fluid = fluidSlot.getDisplayedIngredient(ForgeTypes.FLUID_STACK).orElse(new FluidStack(CEIDyeFluids.get(DyeColor.BLACK), 100)); // Fallback
+        var fluid = fluidSlot.getDisplayedIngredient(FabricTypes.FLUID_STACK)
+                .map(CreateRecipeCategory::fromJei)
+                .orElse(CEIFluidUnits.stack(CEIDyeFluids.get(DyeColor.BLACK), 100)); // Fallback
         var base = baseSlot.getDisplayedItemStack();
         var template = templateSlot.getDisplayedItemStack();
         var color = CEIDyeFluids.color(fluid);

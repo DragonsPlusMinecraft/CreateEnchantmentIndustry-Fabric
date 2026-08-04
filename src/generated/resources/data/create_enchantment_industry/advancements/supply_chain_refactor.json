@@ -14,7 +14,7 @@
     "frame": "task",
     "hidden": false,
     "icon": {
-      "item": "create:cardboard_package_12x12"
+      "item": "minecraft:chest"
     },
     "show_toast": true,
     "title": {

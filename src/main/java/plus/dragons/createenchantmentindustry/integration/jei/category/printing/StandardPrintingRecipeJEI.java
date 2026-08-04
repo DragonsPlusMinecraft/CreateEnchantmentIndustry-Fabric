@@ -18,7 +18,9 @@
 
 package plus.dragons.createenchantmentindustry.integration.jei.category.printing;
 
-import mezz.jei.api.forge.ForgeTypes;
+import static com.simibubi.create.compat.jei.category.CreateRecipeCategory.toJei;
+
+import mezz.jei.api.fabric.constants.FabricTypes;
 import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
 import net.minecraft.resources.ResourceLocation;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
@@ -46,7 +48,11 @@ public class StandardPrintingRecipeJEI implements PrintingRecipeJEI {
     @Override
     public void setFluid(IRecipeSlotBuilder slot) {
         var fluid = recipe.getFluidIngredients().get(0);
-        slot.addIngredients(ForgeTypes.FLUID_STACK, fluid.getMatchingFluidStacks());
+        slot.addIngredients(FabricTypes.FLUID_STACK, fluid.getMatchingFluidStacks().stream().map(plus.dragons.createenchantmentindustry.integration.jei.category.printing.StandardPrintingRecipeJEI::toJeiFluid).toList());
+    }
+
+    private static mezz.jei.api.fabric.ingredients.fluids.IJeiFluidIngredient toJeiFluid(io.github.fabricators_of_create.porting_lib.fluids.FluidStack stack) {
+        return toJei(stack);
     }
 
     @Override

@@ -21,6 +21,7 @@ package plus.dragons.createenchantmentindustry.common.kinetics.crusher;
 import com.simibubi.create.AllItems;
 import com.simibubi.create.content.kinetics.crusher.CrushingWheelControllerBlock;
 import com.simibubi.create.content.kinetics.crusher.CrushingWheelControllerBlockEntity;
+import io.github.fabricators_of_create.porting_lib.entity.extensions.EntityExtensions;
 import net.createmod.catnip.math.VecHelper;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.NbtUtils;
@@ -54,7 +55,7 @@ public class CrushingWheelExperience {
         Vec3 outputPosition = getOutputPosition(crusher);
         ItemEntity expItem = new ItemEntity(serverLevel, outputPosition.x(), outputPosition.y(), outputPosition.z(), AllItems.EXP_NUGGET.asStack(nuggets));
         expItem.setDeltaMovement(getOutputSpeed(crusher));
-        expItem.getPersistentData()
+        ((EntityExtensions) expItem).getCustomData()
                 .put("BypassCrushingWheel", NbtUtils.writeBlockPos(crusher.getBlockPos()));
         serverLevel.addFreshEntity(expItem);
     }

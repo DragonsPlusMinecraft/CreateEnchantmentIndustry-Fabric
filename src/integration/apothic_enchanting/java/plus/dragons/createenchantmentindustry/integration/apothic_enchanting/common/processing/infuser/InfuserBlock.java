@@ -104,9 +104,4 @@ public class InfuserBlock extends HorizontalDirectionalBlock implements IWrencha
     public BlockEntityType<? extends InfuserBlockEntity> getBlockEntityType() {
         return CEIABlockEntities.INFUSER.get();
     }
-
-    @Override
-    public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
-        return 1;
-    }
 }

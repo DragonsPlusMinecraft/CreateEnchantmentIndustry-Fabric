@@ -21,8 +21,7 @@ package plus.dragons.createenchantmentindustry.common.registry;
 import com.google.common.collect.Sets;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.simibubi.create.AllItems;
-import com.simibubi.create.content.logistics.box.PackageStyles;
+import com.google.gson.JsonPrimitive;
 import com.simibubi.create.foundation.advancement.AllTriggers;
 import java.nio.file.Path;
 import java.util.*;
@@ -34,19 +33,25 @@ import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.stats.Stats;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import plus.dragons.createdragonsplus.common.advancements.CDPAdvancement;
 import plus.dragons.createdragonsplus.common.advancements.criterion.BuiltinTrigger;
-import plus.dragons.createdragonsplus.common.registry.CDPItems;
 import plus.dragons.createdragonsplus.util.CodeReference;
+import plus.dragons.createenchantmentindustry.common.CEICommon;
 import plus.dragons.createenchantmentindustry.util.CEIAdvancement;
 
 public class CEIAdvancements implements DataProvider {
+    private static final ResourceLocation CREATE_EXPERIENCE_NUGGET = new ResourceLocation("create", "experience_nugget");
+    private static final ResourceLocation CREATE_SAND_PAPER = new ResourceLocation("create", "sand_paper");
+
     public static final List<CDPAdvancement> ENTRIES = new ArrayList<>();
     public static final CDPAdvancement START = null,
 
@@ -56,23 +61,24 @@ public class CEIAdvancements implements DataProvider {
                     .awardedForFree()
                     .special(CDPAdvancement.TaskType.SILENT)),
 
-            EXPERIENCED_ENGINEER = create("experienced_engineer", b -> b.icon(AllItems.EXP_NUGGET)
+            EXPERIENCED_ENGINEER = create("experienced_engineer", b -> b.icon(Items.EXPERIENCE_BOTTLE)
                     .title("Experienced Engineer")
                     .description("Obtain some Nuggets of Experience")
                     .whenIconCollected()
+                    .icon(provider -> externalItemIcon(provider, CREATE_EXPERIENCE_NUGGET))
                     .after(ROOT)),
 
-            SPIRIT_TAKING = create("spirit_taking", b -> b.icon(AllItems.EXP_NUGGET)
+            SPIRIT_TAKING = create("spirit_taking", b -> b.icon(provider -> externalItemIcon(provider, CREATE_EXPERIENCE_NUGGET))
                     .title("Spirit-Taking")
                     .description("Store your experience using an Experience Hatch")
                     .after(EXPERIENCED_ENGINEER)),
 
-            SPIRITUAL_RETURN = create("spiritual_return", b -> b.icon(AllItems.EXP_NUGGET)
+            SPIRITUAL_RETURN = create("spiritual_return", b -> b.icon(provider -> externalItemIcon(provider, CREATE_EXPERIENCE_NUGGET))
                     .title("Spiritual Return")
                     .description("Retrieve some experience using an Experience Hatch")
                     .after(SPIRIT_TAKING)),
 
-            A_SHOWER_EXPERIENCE = create("a_shower_experience", b -> b.icon(AllItems.EXP_NUGGET)
+            A_SHOWER_EXPERIENCE = create("a_shower_experience", b -> b.icon(provider -> externalItemIcon(provider, CREATE_EXPERIENCE_NUGGET))
                     .title("A Shower \"Experience\"")
                     .description("Break a Fluid Pipe and bathe in the leaked experience")
                     .special(CDPAdvancement.TaskType.SECRET)
@@ -90,7 +96,7 @@ public class CEIAdvancements implements DataProvider {
                     .description("Watch an enchanted item be disenchanted by a Mechanical Grindstone")
                     .after(EXPERIENCED_ENGINEER)),
 
-            GRIND_TO_POLISH = create("grind_to_polish", b -> b.icon(AllItems.SAND_PAPER)
+            GRIND_TO_POLISH = create("grind_to_polish", b -> b.icon(provider -> externalItemIcon(provider, CREATE_SAND_PAPER))
                     .title("Grind to Polish")
                     .description("Sandpaper? I've got a better one")
                     .special(CDPAdvancement.TaskType.NOISY)
@@ -225,12 +231,12 @@ public class CEIAdvancements implements DataProvider {
                     .description("Use a Printer to rename an item")
                     .after(COPIABLE_MYSTERY)),
 
-            SUPPLY_CHAIN_REFACTOR = create("supply_chain_refactor", b -> b.icon(PackageStyles.getDefaultBox())
+            SUPPLY_CHAIN_REFACTOR = create("supply_chain_refactor", b -> b.icon(Items.CHEST)
                     .title("Supply Chain Refactor")
                     .description("Use a Printer to change a package's address")
                     .after(BRAND_REGISTRY)),
 
-            ASSEMBLY_AESTHETICS = create("assembly_aesthetics", b -> b.icon(CDPItems.RARE_MARBLE_GATE_PACKAGE)
+            ASSEMBLY_AESTHETICS = create("assembly_aesthetics", b -> b.icon(Items.PAINTING)
                     .title("Assembly Aesthetics")
                     .description("Use a Printer to change a package's pattern")
                     .after(SUPPLY_CHAIN_REFACTOR)),
@@ -244,6 +250,11 @@ public class CEIAdvancements implements DataProvider {
 
     private static CDPAdvancement create(String id, UnaryOperator<CDPAdvancement.Builder> b) {
         return new CEIAdvancement(id, b);
+    }
+
+    private static ItemStack externalItemIcon(HolderLookup.Provider provider, ResourceLocation id) {
+        var key = ResourceKey.create(Registries.ITEM, id);
+        return new ItemStack(provider.lookupOrThrow(Registries.ITEM).getOrThrow(key).value());
     }
 
     private final PackOutput output;
@@ -267,13 +278,12 @@ public class CEIAdvancements implements DataProvider {
                     throw new IllegalStateException("Duplicate advancement " + id);
                 Path path = pathProvider.json(id);
                 LOGGER.info("Saving advancement {}", id);
+                var json = advancement.deconstruct().serializeToJson();
+                stabilizeExternalItemReferences(id, json);
                 if (isClassicBlazeEnchanterAdvancement(id)) {
-                    var json = advancement.deconstruct().serializeToJson();
                     json.add("conditions", classicBlazeEnchanterConditions());
-                    futures.add(DataProvider.saveStable(cache, json, path));
-                } else {
-                    futures.add(DataProvider.saveStable(cache, advancement.deconstruct().serializeToJson(), path));
                 }
+                futures.add(DataProvider.saveStable(cache, json, path));
             };
 
             for (CDPAdvancement advancement : ENTRIES)
@@ -281,6 +291,19 @@ public class CEIAdvancements implements DataProvider {
 
             return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
         });
+    }
+
+    private static void stabilizeExternalItemReferences(ResourceLocation id, JsonObject json) {
+        if (!id.equals(CEICommon.asResource("experienced_engineer")))
+            return;
+        var itemIds = json.getAsJsonObject("criteria")
+                .getAsJsonObject("0")
+                .getAsJsonObject("conditions")
+                .getAsJsonArray("items")
+                .get(0)
+                .getAsJsonObject()
+                .getAsJsonArray("items");
+        itemIds.set(0, new JsonPrimitive(CREATE_EXPERIENCE_NUGGET.toString()));
     }
 
     private static boolean isClassicBlazeEnchanterAdvancement(ResourceLocation id) {

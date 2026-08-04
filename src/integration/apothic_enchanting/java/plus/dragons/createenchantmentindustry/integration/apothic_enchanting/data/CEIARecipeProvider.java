@@ -29,14 +29,12 @@ import com.simibubi.create.content.kinetics.deployer.DeployerApplicationRecipe;
 import dev.shadowsoffire.apotheosis.ench.Ench;
 import java.util.Objects;
 import java.util.function.Consumer;
-import net.minecraft.data.PackOutput;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.FinishedRecipe;
-import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.common.crafting.ConditionalRecipe;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
 import plus.dragons.createdragonsplus.common.registry.CDPFluids;
 import plus.dragons.createdragonsplus.data.recipe.CreateRecipeBuilders;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
@@ -45,18 +43,24 @@ import plus.dragons.createenchantmentindustry.integration.ModIntegration;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.processing.infuser.InfusingRecipe;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.processing.infuser.InfusionStats;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.registry.CEIAFluids;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 
-public class CEIARecipeProvider extends RecipeProvider {
+public class CEIARecipeProvider extends FabricRecipeProvider {
     private static final String BRASS = "brass";
     private static final Item ENDER_LEAD = Objects.requireNonNull(
-            ForgeRegistries.ITEMS.getValue(new ResourceLocation("apotheosis", "ender_lead")));
+            BuiltInRegistries.ITEM.get(new ResourceLocation("zenith", "ender_lead")));
 
-    public CEIARecipeProvider(PackOutput output) {
+    public CEIARecipeProvider(FabricDataOutput output) {
         super(output);
     }
 
     @Override
-    protected void buildRecipes(Consumer<FinishedRecipe> output) {
+    public String getName() {
+        return "Create: Enchantment Industry Zenith Enchanting Recipes";
+    }
+
+    @Override
+    public void buildRecipes(Consumer<FinishedRecipe> output) {
         shaped().define('-', BRASS_SHEET)
                 .define('o', SPOUT)
                 .define('=', ORANGE_NIXIE_TUBE)
@@ -85,23 +89,23 @@ public class CEIARecipeProvider extends RecipeProvider {
         new InfusingRecipe.Builder(CEICommon.asResource("infused_dragon_breath"), new InfusionStats(80, 15, 60))
                 .withCondition(ModIntegration.APOTHIC_ENCHANTING.condition())
                 .withCondition(CEIApotheosisModuleCondition.ENCHANTMENT)
-                .require(CDPFluids.DRAGON_BREATH.get().getSource(), 250)
-                .output(new FluidStack(CEIAFluids.INFUSED_DRAGON_BREATH.get(), 750))
+                .require(CDPFluids.DRAGON_BREATH.getSource(), CEIFluidUnits.millibuckets(250))
+                .output(CEIFluidUnits.stack(CEIAFluids.INFUSED_DRAGON_BREATH.getSource(), 750))
                 .build(output);
 
         var brassBookshelf = CreateRecipeBuilders.sequencedAssembly(BRASS_BOOKSHELF.getId())
-                .require(Ench.Blocks.PEARL_ENDSHELF.get())
+                .require(Ench.Blocks.PEARL_ENDSHELF)
                 .transitionTo(INCOMPLETE_BRASS_BOOKSHELF)
                 .addOutput(BRASS_BOOKSHELF, 1)
                 .loops(3)
                 .addStep(DeployerApplicationRecipe::new,
                         rb -> rb.require(BRASS_INGOT))
-                .addStep(FillingRecipe::new, rb -> rb.require(CEIAFluids.MOD_TAGS.infusing_ingredients, 250))
+                .addStep(FillingRecipe::new, rb -> rb.require(
+                        CEIAFluids.MOD_TAGS.infusing_ingredients, CEIFluidUnits.millibuckets(250)))
                 .addStep(DeployerApplicationRecipe::new, rb -> rb.require(PRECISION_MECHANISM));
-        ConditionalRecipe.builder()
-                .addCondition(ModIntegration.APOTHIC_ENCHANTING.condition())
-                .addCondition(CEIApotheosisModuleCondition.ENCHANTMENT)
-                .addRecipe(brassBookshelf::build)
-                .build(output, BRASS_BOOKSHELF.getId().withPrefix("sequenced_assembly/"));
+        brassBookshelf.build(withConditions(
+                output,
+                ModIntegration.APOTHIC_ENCHANTING.condition(),
+                CEIApotheosisModuleCondition.ENCHANTMENT));
     }
 }

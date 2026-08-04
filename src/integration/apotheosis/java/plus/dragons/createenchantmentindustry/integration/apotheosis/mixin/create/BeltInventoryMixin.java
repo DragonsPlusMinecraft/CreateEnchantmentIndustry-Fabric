@@ -45,7 +45,7 @@ public abstract class BeltInventoryMixin {
     @Final
     BeltBlockEntity belt;
 
-    @WrapMethod(method = "getBeltProcessingAtSegment")
+    @WrapMethod(method = "getBeltProcessingAtSegment", remap = false)
     private BeltProcessingBehaviour getBeltProcessingAtSegment$getLowerBeltProcessingBehaviour(int segment, Operation<BeltProcessingBehaviour> original) {
         var bhvr = BlockEntityBehaviour.get(belt.getLevel(), BeltHelper.getPositionForOffset(belt, segment)
                 .above(1), LowerBeltProcessingBehaviour.TYPE);

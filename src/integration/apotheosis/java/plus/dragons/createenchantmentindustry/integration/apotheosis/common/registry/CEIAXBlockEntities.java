@@ -21,7 +21,8 @@ package plus.dragons.createenchantmentindustry.integration.apotheosis.common.reg
 import static plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.CEIACommon.REGISTRATE;
 
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
-import net.minecraftforge.eventbus.api.IEventBus;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
 import plus.dragons.createdragonsplus.common.processing.blaze.BlazeBlockVisual;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.affix.affixEnhancer.AffixAugmentorBlockEntity;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.affix.affixEnhancer.AffixAugmentorRenderer;
@@ -50,5 +51,12 @@ public class CEIAXBlockEntities {
             .validBlock(CEIAXBlocks.BLAZE_COMPOSER)
             .register();
 
-    public static void register(IEventBus modBus) {}
+    public static void register() {}
+
+    public static void registerStorageProviders() {
+        FluidStorage.SIDED.registerForBlockEntity(
+                BlazeComposerBlockEntity::getFluidStorage, BLAZE_COMPOSER.get());
+        ItemStorage.SIDED.registerForBlockEntity(
+                BlazeComposerBlockEntity::getItemStorage, BLAZE_COMPOSER.get());
+    }
 }

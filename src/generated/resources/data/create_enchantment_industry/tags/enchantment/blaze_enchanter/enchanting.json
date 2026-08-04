@@ -1,47 +1,8 @@
 {
+  "replace": false,
   "values": [
     {
-      "id": "minecraft:protection",
-      "required": false
-    },
-    {
-      "id": "minecraft:fire_protection",
-      "required": false
-    },
-    {
-      "id": "minecraft:feather_falling",
-      "required": false
-    },
-    {
-      "id": "minecraft:blast_protection",
-      "required": false
-    },
-    {
-      "id": "minecraft:projectile_protection",
-      "required": false
-    },
-    {
-      "id": "minecraft:respiration",
-      "required": false
-    },
-    {
       "id": "minecraft:aqua_affinity",
-      "required": false
-    },
-    {
-      "id": "minecraft:thorns",
-      "required": false
-    },
-    {
-      "id": "minecraft:depth_strider",
-      "required": false
-    },
-    {
-      "id": "minecraft:sharpness",
-      "required": false
-    },
-    {
-      "id": "minecraft:smite",
       "required": false
     },
     {
@@ -49,19 +10,47 @@
       "required": false
     },
     {
-      "id": "minecraft:knockback",
+      "id": "zenith:bane_of_illagers",
       "required": false
     },
     {
-      "id": "minecraft:fire_aspect",
+      "id": "zenith:berserkers_fury",
       "required": false
     },
     {
-      "id": "minecraft:looting",
+      "id": "minecraft:blast_protection",
       "required": false
     },
     {
-      "id": "minecraft:sweeping",
+      "id": "create:capacity",
+      "required": false
+    },
+    {
+      "id": "zenith:capturing",
+      "required": false
+    },
+    {
+      "id": "zenith:chainsaw",
+      "required": false
+    },
+    {
+      "id": "minecraft:channeling",
+      "required": false
+    },
+    {
+      "id": "zenith:chromatic",
+      "required": false
+    },
+    {
+      "id": "zenith:crescendo",
+      "required": false
+    },
+    {
+      "id": "minecraft:depth_strider",
+      "required": false
+    },
+    {
+      "id": "zenith:earths_boon",
       "required": false
     },
     {
@@ -69,23 +58,23 @@
       "required": false
     },
     {
-      "id": "minecraft:silk_touch",
+      "id": "zenith:endless_quiver",
       "required": false
     },
     {
-      "id": "minecraft:unbreaking",
+      "id": "zenith:exploitation",
       "required": false
     },
     {
-      "id": "minecraft:fortune",
+      "id": "minecraft:feather_falling",
       "required": false
     },
     {
-      "id": "minecraft:power",
+      "id": "minecraft:fire_aspect",
       "required": false
     },
     {
-      "id": "minecraft:punch",
+      "id": "minecraft:fire_protection",
       "required": false
     },
     {
@@ -93,7 +82,43 @@
       "required": false
     },
     {
+      "id": "minecraft:fortune",
+      "required": false
+    },
+    {
+      "id": "zenith:growth_serum",
+      "required": false
+    },
+    {
+      "id": "zenith:icy_thorns",
+      "required": false
+    },
+    {
+      "id": "minecraft:impaling",
+      "required": false
+    },
+    {
       "id": "minecraft:infinity",
+      "required": false
+    },
+    {
+      "id": "minecraft:knockback",
+      "required": false
+    },
+    {
+      "id": "zenith:knowledge",
+      "required": false
+    },
+    {
+      "id": "zenith:life_mending",
+      "required": false
+    },
+    {
+      "id": "minecraft:looting",
+      "required": false
+    },
+    {
+      "id": "minecraft:loyalty",
       "required": false
     },
     {
@@ -105,19 +130,7 @@
       "required": false
     },
     {
-      "id": "minecraft:loyalty",
-      "required": false
-    },
-    {
-      "id": "minecraft:impaling",
-      "required": false
-    },
-    {
-      "id": "minecraft:riptide",
-      "required": false
-    },
-    {
-      "id": "minecraft:channeling",
+      "id": "zenith:miners_fervor",
       "required": false
     },
     {
@@ -125,7 +138,11 @@
       "required": false
     },
     {
-      "id": "minecraft:quick_charge",
+      "id": "zenith:natures_blessing",
+      "required": false
+    },
+    {
+      "id": "zenith:obliteration",
       "required": false
     },
     {
@@ -133,119 +150,91 @@
       "required": false
     },
     {
-      "id": "apotheosis:berserkers_fury",
-      "required": false
-    },
-    {
-      "id": "apotheosis:chainsaw",
-      "required": false
-    },
-    {
-      "id": "apotheosis:chromatic",
-      "required": false
-    },
-    {
-      "id": "apotheosis:crescendo",
-      "required": false
-    },
-    {
-      "id": "apotheosis:earths_boon",
-      "required": false
-    },
-    {
-      "id": "apotheosis:endless_quiver",
-      "required": false
-    },
-    {
-      "id": "apotheosis:exploitation",
-      "required": false
-    },
-    {
-      "id": "apotheosis:growth_serum",
-      "required": false
-    },
-    {
-      "id": "apotheosis:icy_thorns",
-      "required": false
-    },
-    {
-      "id": "apotheosis:knowledge",
-      "required": false
-    },
-    {
-      "id": "apotheosis:life_mending",
-      "required": false
-    },
-    {
-      "id": "apotheosis:miners_fervor",
-      "required": false
-    },
-    {
-      "id": "apotheosis:natures_blessing",
-      "required": false
-    },
-    {
-      "id": "apotheosis:obliteration",
-      "required": false
-    },
-    {
-      "id": "apotheosis:rebounding",
-      "required": false
-    },
-    {
-      "id": "apotheosis:reflective",
-      "required": false
-    },
-    {
-      "id": "apotheosis:scavenger",
-      "required": false
-    },
-    {
-      "id": "apotheosis:shield_bash",
-      "required": false
-    },
-    {
-      "id": "apotheosis:spearfishing",
-      "required": false
-    },
-    {
-      "id": "apotheosis:splitting",
-      "required": false
-    },
-    {
-      "id": "apotheosis:stable_footing",
-      "required": false
-    },
-    {
-      "id": "apotheosis:tempting",
-      "required": false
-    },
-    {
-      "id": "touhou_little_maid:impeding",
-      "required": false
-    },
-    {
-      "id": "touhou_little_maid:speedy",
-      "required": false
-    },
-    {
-      "id": "touhou_little_maid:enders_ender",
-      "required": false
-    },
-    {
       "id": "create:potato_recovery",
       "required": false
     },
     {
-      "id": "create:capacity",
+      "id": "minecraft:power",
       "required": false
     },
     {
-      "id": "apotheosis:bane_of_illagers",
+      "id": "minecraft:projectile_protection",
       "required": false
     },
     {
-      "id": "apotheosis:capturing",
+      "id": "minecraft:protection",
+      "required": false
+    },
+    {
+      "id": "minecraft:punch",
+      "required": false
+    },
+    {
+      "id": "minecraft:quick_charge",
+      "required": false
+    },
+    {
+      "id": "zenith:rebounding",
+      "required": false
+    },
+    {
+      "id": "zenith:reflective",
+      "required": false
+    },
+    {
+      "id": "minecraft:respiration",
+      "required": false
+    },
+    {
+      "id": "minecraft:riptide",
+      "required": false
+    },
+    {
+      "id": "zenith:scavenger",
+      "required": false
+    },
+    {
+      "id": "minecraft:sharpness",
+      "required": false
+    },
+    {
+      "id": "zenith:shield_bash",
+      "required": false
+    },
+    {
+      "id": "minecraft:silk_touch",
+      "required": false
+    },
+    {
+      "id": "minecraft:smite",
+      "required": false
+    },
+    {
+      "id": "zenith:spearfishing",
+      "required": false
+    },
+    {
+      "id": "zenith:splitting",
+      "required": false
+    },
+    {
+      "id": "zenith:stable_footing",
+      "required": false
+    },
+    {
+      "id": "minecraft:sweeping",
+      "required": false
+    },
+    {
+      "id": "zenith:tempting",
+      "required": false
+    },
+    {
+      "id": "minecraft:thorns",
+      "required": false
+    },
+    {
+      "id": "minecraft:unbreaking",
       "required": false
     }
   ]

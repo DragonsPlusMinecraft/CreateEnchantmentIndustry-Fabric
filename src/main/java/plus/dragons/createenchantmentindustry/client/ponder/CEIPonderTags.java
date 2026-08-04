@@ -25,7 +25,6 @@ import com.simibubi.create.AllBlocks;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import net.createmod.ponder.api.registration.PonderTagRegistrationHelper;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.data.loading.DatagenModLoader;
 import plus.dragons.createdragonsplus.common.registry.CDPBlockEntities;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
 import plus.dragons.createenchantmentindustry.common.registry.CEIBlocks;
@@ -71,7 +70,7 @@ public class CEIPonderTags {
                 .add(CEIBlocks.BLAZE_ENCHANTER)
                 .add(CEIBlocks.BLAZE_FORGER);
 
-        if (DatagenModLoader.isRunningDataGen() || CEIConfig.features().classicBlazeEnchanter.get()) {
+        if (System.getProperty("fabric-api.datagen") != null || CEIConfig.features().classicBlazeEnchanter.get()) {
             entryHelper.addToTag(EXPERIENCE_APPLIANCES)
                     .add(CEIBlocks.CLASSIC_BLAZE_ENCHANTER);
             entryHelper.addToTag(SUPER_EXPERIENCE_APPLIANCES)

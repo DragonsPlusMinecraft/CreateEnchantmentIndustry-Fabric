@@ -19,10 +19,10 @@
 package plus.dragons.createenchantmentindustry.mixin;
 
 import com.simibubi.create.content.fluids.spout.FillingBySpout;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fluids.FluidStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -37,8 +37,8 @@ public class FillingBySpoutMixin {
             cir.setReturnValue(true);
     }
 
-    @Inject(method = "getRequiredAmountForItem", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/fluids/transfer/GenericItemFilling;getRequiredAmountForItem(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;Lnet/minecraftforge/fluids/FluidStack;)I"), cancellable = true)
-    private static void getRequiredAmountForItem$mending(Level level, ItemStack stack, FluidStack availableFluid, CallbackInfoReturnable<Integer> cir) {
+    @Inject(method = "getRequiredAmountForItem", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/fluids/transfer/GenericItemFilling;getRequiredAmountForItem(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;Lio/github/fabricators_of_create/porting_lib/fluids/FluidStack;)J"), cancellable = true)
+    private static void getRequiredAmountForItem$mending(Level level, ItemStack stack, FluidStack availableFluid, CallbackInfoReturnable<Long> cir) {
         if (!(level instanceof ServerLevel serverLevel && ExperienceHelper.canRepairItem(stack))) {
             return;
         }
@@ -46,13 +46,13 @@ public class FillingBySpoutMixin {
         if (availableXp == 0)
             return;
         int requiredXp = ExperienceHelper.repairItem(availableXp, serverLevel, stack, true);
-        int requiredFluid = ExperienceHelper.getFluidFromExperience(availableFluid, requiredXp);
+        long requiredFluid = ExperienceHelper.getFluidFromExperience(availableFluid, requiredXp);
         if (requiredFluid > 0)
             cir.setReturnValue(requiredFluid);
     }
 
-    @Inject(method = "fillItem", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/fluids/transfer/GenericItemFilling;fillItem(Lnet/minecraft/world/level/Level;ILnet/minecraft/world/item/ItemStack;Lnet/minecraftforge/fluids/FluidStack;)Lnet/minecraft/world/item/ItemStack;"), cancellable = true)
-    private static void fillItem$mending(Level level, int requiredAmount, ItemStack stack, FluidStack availableFluid, CallbackInfoReturnable<ItemStack> cir) {
+    @Inject(method = "fillItem", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/fluids/transfer/GenericItemFilling;fillItem(Lnet/minecraft/world/level/Level;JLnet/minecraft/world/item/ItemStack;Lio/github/fabricators_of_create/porting_lib/fluids/FluidStack;)Lnet/minecraft/world/item/ItemStack;"), cancellable = true)
+    private static void fillItem$mending(Level level, long requiredAmount, ItemStack stack, FluidStack availableFluid, CallbackInfoReturnable<ItemStack> cir) {
         if ((level instanceof ServerLevel serverLevel && ExperienceHelper.canRepairItem(stack))) {
             int availableXp = ExperienceHelper.getExperienceFromFluid(availableFluid);
             if (availableXp == 0)

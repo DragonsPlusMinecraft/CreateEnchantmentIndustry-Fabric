@@ -38,14 +38,13 @@ import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.data.loading.DatagenModLoader;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.affix.affixEnhancer.AffixAugmentorBlockEntity;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.socket.gem.gemCutter.GemCutterBlockEntity;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.socket.gem.gemCutter.GemCutting;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.registry.CEIAXBlocks;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.registry.CEIAXFluids;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
+import plus.dragons.createenchantmentindustry.util.CEITransfer;
 
 public class CEIAXPonderScenes {
     public static void bulkSalvaging(SceneBuilder builder, SceneBuildingUtil util) {
@@ -108,9 +107,9 @@ public class CEIAXPonderScenes {
         scene.idle(3);
         scene.world().modifyBlockEntity(util.grid().at(2, 1, 0), DepotBlockEntity.class, depot -> depot.setHeldItem(Items.LEATHER_BOOTS.getDefaultInstance()));
         scene.idle(60);
-        scene.world().modifyBlockEntity(util.grid().at(2, 1, 2), DepotBlockEntity.class, depot -> depot.setHeldItem(new ItemStack(Adventure.Items.GEM_DUST.get(), 8)));
+        scene.world().modifyBlockEntity(util.grid().at(2, 1, 2), DepotBlockEntity.class, depot -> depot.setHeldItem(new ItemStack(Adventure.Items.GEM_DUST, 8)));
         scene.idle(3);
-        scene.world().modifyBlockEntity(util.grid().at(2, 1, 1), DepotBlockEntity.class, depot -> depot.setHeldItem(new ItemStack(Adventure.Items.MYTHIC_MATERIAL.get(), 2)));
+        scene.world().modifyBlockEntity(util.grid().at(2, 1, 1), DepotBlockEntity.class, depot -> depot.setHeldItem(new ItemStack(Adventure.Items.MYTHIC_MATERIAL, 2)));
         scene.idle(3);
         scene.world().modifyBlockEntity(util.grid().at(2, 1, 0), DepotBlockEntity.class, depot -> depot.setHeldItem(new ItemStack(Items.LEATHER, 4)));
         scene.idle(20);
@@ -148,7 +147,7 @@ public class CEIAXPonderScenes {
             var as = (ArmorStand) it;
             as.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
         });
-        scene.world().createItemEntity(util.vector().centerOf(2, 2, 0), new Vec3(0, -0.1, -1), new ItemStack(Adventure.Items.RARE_MATERIAL.get(), 2));
+        scene.world().createItemEntity(util.vector().centerOf(2, 2, 0), new Vec3(0, -0.1, -1), new ItemStack(Adventure.Items.RARE_MATERIAL, 2));
         scene.idle(20);
     }
 
@@ -215,14 +214,20 @@ public class CEIAXPonderScenes {
         scene.world().setKineticSpeed(util.select().fromTo(0, 2, 0, 0, 2, 2), -64);
         scene.idle(20);
         scene.world().modifyBlockEntity(util.grid().at(2, 1, 2), FluidTankBlockEntity.class,
-                be -> be.getTankInventory().fill(new FluidStack(CEIAXFluids.CRYSTAL_ESSENCE.get(), 4000), IFluidHandler.FluidAction.EXECUTE));
+                be -> CEITransfer.insert(
+                        be.getTankInventory(),
+                        CEIFluidUnits.stack(CEIAXFluids.CRYSTAL_ESSENCE.getSource(), 4000),
+                        false));
         scene.idle(10);
         scene.world().modifyBlockEntity(util.grid().at(2, 1, 2), FluidTankBlockEntity.class,
-                be -> be.getTankInventory().fill(new FluidStack(CEIAXFluids.CRYSTAL_ESSENCE.get(), 8000), IFluidHandler.FluidAction.EXECUTE));
+                be -> CEITransfer.insert(
+                        be.getTankInventory(),
+                        CEIFluidUnits.stack(CEIAXFluids.CRYSTAL_ESSENCE.getSource(), 8000),
+                        false));
         scene.world().modifyBlockEntity(util.grid().at(2, 3, 2), GemCutterBlockEntity.class, be -> be.powered = true);
         scene.idle(40);
 
-        if (!DatagenModLoader.isRunningDataGen()) {
+        if (System.getProperty("fabric-api.datagen") == null) {
             scene.addKeyframe();
             var gemKind = GemRegistry.INSTANCE.getValues().stream().findAny().orElseThrow();
             var gem = createGem(gemKind, GemCutting.Tier.MYTHIC);
@@ -243,7 +248,7 @@ public class CEIAXPonderScenes {
     }
 
     private static ItemStack createGem(Gem gem, GemCutting.Tier tier) {
-        ItemStack stack = new ItemStack(Adventure.Items.GEM.get());
+        ItemStack stack = new ItemStack(Adventure.Items.GEM);
         GemItem.setGem(stack, gem);
         var rarity = tier.holder();
         if (rarity.isBound())
@@ -314,12 +319,18 @@ public class CEIAXPonderScenes {
         scene.world().setKineticSpeed(util.select().layer(0), 256);
         scene.idle(20);
         scene.world().modifyBlockEntity(util.grid().at(1, 1, 1), FluidTankBlockEntity.class,
-                be -> be.getTankInventory().fill(new FluidStack(CEIAXFluids.APOTHEOTIC_ESSENCE.get(), 36000), IFluidHandler.FluidAction.EXECUTE));
+                be -> CEITransfer.insert(
+                        be.getTankInventory(),
+                        CEIFluidUnits.stack(CEIAXFluids.APOTHEOTIC_ESSENCE.getSource(), 36000),
+                        false));
         scene.world().setKineticSpeed(util.select().layer(2), 64);
         scene.world().setKineticSpeed(util.select().layer(1), -32);
         scene.idle(10);
         scene.world().modifyBlockEntity(util.grid().at(1, 1, 1), FluidTankBlockEntity.class,
-                be -> be.getTankInventory().fill(new FluidStack(CEIAXFluids.APOTHEOTIC_ESSENCE.get(), 72000), IFluidHandler.FluidAction.EXECUTE));
+                be -> CEITransfer.insert(
+                        be.getTankInventory(),
+                        CEIFluidUnits.stack(CEIAXFluids.APOTHEOTIC_ESSENCE.getSource(), 72000),
+                        false));
         scene.world().modifyBlockEntity(util.grid().at(2, 3, 2), AffixAugmentorBlockEntity.class, be -> be.powered = true);
         scene.idle(40);
 

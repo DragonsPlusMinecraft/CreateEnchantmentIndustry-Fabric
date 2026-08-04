@@ -33,18 +33,21 @@ import com.simibubi.create.foundation.data.AssetLookup;
 import com.simibubi.create.foundation.data.BlockStateGen;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.tterrag.registrate.util.entry.BlockEntry;
-import net.minecraft.client.renderer.RenderType;
+import io.github.fabricators_of_create.porting_lib.models.generators.ModelFile;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.common.util.ForgeSoundType;
-import net.minecraftforge.eventbus.api.IEventBus;
 import plus.dragons.createdragonsplus.common.processing.blaze.BlazeBlock;
 import plus.dragons.createdragonsplus.common.processing.blaze.BlazeMovementBehaviour;
 import plus.dragons.createenchantmentindustry.common.fluids.experience.ExperienceHatchBlock;
@@ -62,6 +65,10 @@ import plus.dragons.createenchantmentindustry.config.CEIConfig;
 
 @SuppressWarnings("removal")
 public class CEIBlocks {
+    private static final TagKey<Block> COMMON_STORAGE_BLOCKS = TagKey.create(
+            Registries.BLOCK, new ResourceLocation("c", "storage_blocks"));
+    private static final TagKey<Item> COMMON_STORAGE_BLOCK_ITEMS = TagKey.create(
+            Registries.ITEM, new ResourceLocation("c", "storage_blocks"));
     public static final BlockEntry<MechanicalGrindstoneBlock> MECHANICAL_GRINDSTONE = REGISTRATE
             .block("mechanical_grindstone", MechanicalGrindstoneBlock::new)
             .initialProperties(SharedProperties::stone)
@@ -108,15 +115,15 @@ public class CEIBlocks {
             .initialProperties(SharedProperties::softMetal)
             .properties(p -> p.mapColor(MapColor.COLOR_GRAY).lightLevel(BlazeBlock::getLight))
             .transform(pickaxeOnly())
-            .addLayer(() -> RenderType::cutoutMipped)
             .onRegister(block -> MovementBehaviour.REGISTRY.register(block, new BlazeMovementBehaviour()))
             .tag(AllBlockTags.FAN_TRANSPARENT.tag, AllBlockTags.FAN_PROCESSING_CATALYSTS_SMOKING.tag)
             .blockstate((ctx, prov) -> prov.horizontalBlock(
                     ctx.getEntry(),
-                    prov.models().getExistingFile(Create.asResource("block/blaze_burner/block"))))
+                    new ModelFile.UncheckedModelFile(Create.asResource("block/blaze_burner/block"))))
             .item(BlazeCustomRenderedBlockItem.Enchanter::new)
-            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(),
-                    Create.asResource("block/blaze_burner/block_with_blaze")))
+            .model((ctx, prov) -> prov.getBuilder(ctx.getName())
+                    .parent(new ModelFile.UncheckedModelFile(
+                            Create.asResource("block/blaze_burner/block_with_blaze"))))
             .build()
             .register();
     public static final BlockEntry<BlazeForgerBlock> BLAZE_FORGER = REGISTRATE
@@ -124,15 +131,15 @@ public class CEIBlocks {
             .initialProperties(SharedProperties::softMetal)
             .properties(p -> p.mapColor(MapColor.COLOR_GRAY).lightLevel(BlazeBlock::getLight))
             .transform(pickaxeOnly())
-            .addLayer(() -> RenderType::cutoutMipped)
             .onRegister(block -> MovementBehaviour.REGISTRY.register(block, new BlazeMovementBehaviour()))
             .tag(AllBlockTags.FAN_TRANSPARENT.tag, AllBlockTags.FAN_PROCESSING_CATALYSTS_SMOKING.tag)
             .blockstate((ctx, prov) -> prov.horizontalBlock(
                     ctx.getEntry(),
-                    prov.models().getExistingFile(Create.asResource("block/blaze_burner/block"))))
+                    new ModelFile.UncheckedModelFile(Create.asResource("block/blaze_burner/block"))))
             .item(BlazeCustomRenderedBlockItem.Forger::new)
-            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(),
-                    Create.asResource("block/blaze_burner/block_with_blaze")))
+            .model((ctx, prov) -> prov.getBuilder(ctx.getName())
+                    .parent(new ModelFile.UncheckedModelFile(
+                            Create.asResource("block/blaze_burner/block_with_blaze"))))
             .build()
             .register();
     public static final BlockEntry<ClassicBlazeEnchanterBlock> CLASSIC_BLAZE_ENCHANTER = REGISTRATE
@@ -140,50 +147,51 @@ public class CEIBlocks {
             .initialProperties(SharedProperties::softMetal)
             .properties(p -> p.mapColor(MapColor.COLOR_GRAY).lightLevel(BlazeBlock::getLight))
             .transform(pickaxeOnly())
-            .addLayer(() -> RenderType::cutoutMipped)
             .onRegister(block -> MovementBehaviour.REGISTRY.register(block, new BlazeMovementBehaviour()))
             .tag(AllBlockTags.FAN_TRANSPARENT.tag, AllBlockTags.FAN_PROCESSING_CATALYSTS_SMOKING.tag)
             .blockstate((ctx, prov) -> prov.horizontalBlock(
                     ctx.getEntry(),
-                    prov.models().getExistingFile(Create.asResource("block/blaze_burner/block"))))
+                    new ModelFile.UncheckedModelFile(Create.asResource("block/blaze_burner/block"))))
             .item(BlazeCustomRenderedBlockItem.ClassicEnchanter::new)
-            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(),
-                    Create.asResource("block/blaze_burner/block_with_blaze")))
+            .model((ctx, prov) -> prov.getBuilder(ctx.getName())
+                    .parent(new ModelFile.UncheckedModelFile(
+                            Create.asResource("block/blaze_burner/block_with_blaze"))))
             .build()
             .register();
     public static final BlockEntry<ExperienceBlock> SUPER_EXPERIENCE_BLOCK = REGISTRATE
             .block("super_experience_block", ExperienceBlock::new)
             .initialProperties(SharedProperties::softMetal)
             .properties(p -> p.mapColor(MapColor.DIAMOND)
-                    .sound(new ForgeSoundType(1, .5f, () -> SoundEvents.AMETHYST_BLOCK_BREAK,
-                            () -> SoundEvents.AMETHYST_BLOCK_STEP, () -> SoundEvents.AMETHYST_BLOCK_PLACE,
-                            () -> SoundEvents.AMETHYST_BLOCK_HIT, () -> SoundEvents.AMETHYST_BLOCK_FALL))
+                    .sound(new SoundType(1, .5f, SoundEvents.AMETHYST_BLOCK_BREAK,
+                            SoundEvents.AMETHYST_BLOCK_STEP, SoundEvents.AMETHYST_BLOCK_PLACE,
+                            SoundEvents.AMETHYST_BLOCK_HIT, SoundEvents.AMETHYST_BLOCK_FALL))
                     .requiresCorrectToolForDrops()
                     .lightLevel(state -> 15))
             .blockstate((ctx, prov) -> prov.simpleBlock(ctx.get(), prov.models()
-                    .withExistingParent(ctx.getName(), Create.asResource("block/experience_block"))
+                    .getBuilder(ctx.getName())
+                    .parent(new ModelFile.UncheckedModelFile(Create.asResource("block/experience_block")))
                     .texture("all", ctx.getId().withPrefix("block/"))
                     .texture("particle", ctx.getId().withPrefix("block/"))))
             .transform(pickaxeOnly())
             .lang("Block of Super Experience")
-            .tag(Tags.Blocks.STORAGE_BLOCKS)
+            .tag(COMMON_STORAGE_BLOCKS)
             .tag(BlockTags.BEACON_BASE_BLOCKS)
             .item()
             .properties(p -> p.rarity(Rarity.RARE))
-            .tag(Tags.Items.STORAGE_BLOCKS)
+            .tag(COMMON_STORAGE_BLOCK_ITEMS)
             .build()
             .register();
     public static final BlockEntry<ExperienceLanternBlock> EXPERIENCE_LANTERN = REGISTRATE
             .block("experience_lantern", ExperienceLanternBlock::new)
             .initialProperties(SharedProperties::softMetal)
-            .properties(p -> p.mapColor(MapColor.COLOR_LIGHT_GREEN))
+            .properties(p -> p.mapColor(MapColor.COLOR_LIGHT_GREEN)
+                    .lightLevel(state -> state.getValue(ExperienceLanternBlock.LIGHT)))
             .transform(pickaxeOnly())
             .transform(mountedFluidStorage(CEIMountedStorageTypes.EXPERIENCE_LANTERN))
             .onRegister(block -> MovementBehaviour.REGISTRY.register(block, new ExperienceLanternMovementBehaviour()))
-            .addLayer(() -> RenderType::cutoutMipped)
             .blockstate((ctx, prov) -> prov.directionalBlock(ctx.get(), AssetLookup.standardModel(ctx, prov)))
             .simpleItem()
             .register();
 
-    public static void register(IEventBus modBus) {}
+    public static void register() {}
 }

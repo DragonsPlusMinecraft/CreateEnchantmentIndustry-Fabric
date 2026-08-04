@@ -18,13 +18,18 @@
 
 package plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.affix.blazeComposer;
 
+import io.github.fabricators_of_create.porting_lib.transfer.item.ItemStackHandler;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.ItemStackHandler;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.affix.blazeComposer.template.AffixTemplateOps;
 
+/** Four-slot snapshot-aware inventory exposed through Fabric Transfer API. */
 public class BlazeComposerInventory extends ItemStackHandler {
     private final BlazeComposerBlockEntity composer;
+    private boolean suppressCallbacks;
     private AffixTemplateOps.Result result = AffixTemplateOps.Result.emptyInput();
 
     public BlazeComposerInventory(BlazeComposerBlockEntity composer) {
@@ -38,17 +43,73 @@ public class BlazeComposerInventory extends ItemStackHandler {
     }
 
     @Override
-    public int getSlots() {
-        return 4;
+    public boolean isItemValid(int slot, ItemVariant resource, int count) {
+        return slot >= 0 && slot < 2 && !hasRemainingOutput();
     }
 
-    @Override
     public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-        if (slot > 1)
+        validateSlotIndex(slot);
+        if (slot > 1 || stack.isEmpty() || hasRemainingOutput())
             return stack;
-        if (hasRemainingOutput())
+        try (Transaction transaction = Transaction.openOuter()) {
+            ItemStack remainder = insertItem(slot, stack, transaction);
+            if (!simulate)
+                transaction.commit();
+            return remainder;
+        }
+    }
+
+    public ItemStack insertItem(int slot, ItemStack stack, TransactionContext transaction) {
+        validateSlotIndex(slot);
+        if (slot > 1 || stack.isEmpty() || hasRemainingOutput())
             return stack;
-        return super.insertItem(slot, stack, simulate);
+        long inserted = getSlot(slot).insert(ItemVariant.of(stack), stack.getCount(), transaction);
+        ItemStack remainder = stack.copy();
+        remainder.shrink(Math.toIntExact(inserted));
+        return remainder;
+    }
+
+    public ItemStack extractItem(int slot, int amount, boolean simulate) {
+        validateSlotIndex(slot);
+        if (amount <= 0)
+            return ItemStack.EMPTY;
+        ItemStack stored = getStackInSlot(slot);
+        if (stored.isEmpty())
+            return ItemStack.EMPTY;
+        try (Transaction transaction = Transaction.openOuter()) {
+            ItemStack result = extractItem(slot, amount, transaction);
+            if (!simulate)
+                transaction.commit();
+            return result;
+        }
+    }
+
+    public ItemStack extractItem(int slot, int amount, TransactionContext transaction) {
+        validateSlotIndex(slot);
+        if (amount <= 0)
+            return ItemStack.EMPTY;
+        ItemStack stored = getStackInSlot(slot);
+        if (stored.isEmpty())
+            return ItemStack.EMPTY;
+        long extracted = getSlot(slot).extract(ItemVariant.of(stored), amount, transaction);
+        ItemStack result = stored.copy();
+        result.setCount(Math.toIntExact(extracted));
+        return result;
+    }
+
+    private void validateSlotIndex(int slot) {
+        if (slot < 0 || slot >= getSlotCount())
+            throw new IndexOutOfBoundsException(
+                    "Slot " + slot + " not in valid range [0," + getSlotCount() + ")");
+    }
+
+    private void setInternal(int slot, ItemStack stack) {
+        suppressCallbacks = true;
+        try {
+            setStackInSlot(slot, stack);
+        } finally {
+            suppressCallbacks = false;
+        }
     }
 
     @Override
@@ -60,6 +121,8 @@ public class BlazeComposerInventory extends ItemStackHandler {
 
     @Override
     protected void onContentsChanged(int slot) {
+        if (suppressCallbacks)
+            return;
         if (slot == 0 || slot == 1) {
             composer.onInputChanged();
             updateResult();
@@ -73,11 +136,6 @@ public class BlazeComposerInventory extends ItemStackHandler {
         updateResult();
     }
 
-    @Override
-    public CompoundTag serializeNBT() {
-        return super.serializeNBT();
-    }
-
     public int getEssenceCost() {
         return result.cost();
     }
@@ -87,19 +145,18 @@ public class BlazeComposerInventory extends ItemStackHandler {
     }
 
     public boolean hasRemainingOutput() {
-        return !stacks.get(2).isEmpty() || !stacks.get(3).isEmpty();
+        return !getStackInSlot(2).isEmpty() || !getStackInSlot(3).isEmpty();
     }
 
     public void clearInput() {
-        stacks.set(0, ItemStack.EMPTY);
-        stacks.set(1, ItemStack.EMPTY);
+        setInternal(0, ItemStack.EMPTY);
+        setInternal(1, ItemStack.EMPTY);
         result = AffixTemplateOps.Result.emptyInput();
     }
 
     public void clear() {
-        for (int i = 0; i < stacks.size(); i++) {
-            stacks.set(i, ItemStack.EMPTY);
-        }
+        for (int i = 0; i < getSlotCount(); i++)
+            setInternal(i, ItemStack.EMPTY);
         result = AffixTemplateOps.Result.emptyInput();
     }
 
@@ -108,15 +165,15 @@ public class BlazeComposerInventory extends ItemStackHandler {
                 composer.getMode(),
                 composer.isSuper(),
                 composer.getBlockedSuperPenalty(),
-                stacks.get(0),
-                stacks.get(1));
+                getStackInSlot(0),
+                getStackInSlot(1));
     }
 
     public void applyResult(ItemStack primaryOutput, ItemStack secondaryOutput) {
         if (primaryOutput.isEmpty() && secondaryOutput.isEmpty())
             return;
-        stacks.set(2, primaryOutput.copy());
-        stacks.set(3, secondaryOutput.copy());
+        setInternal(2, primaryOutput.copy());
+        setInternal(3, secondaryOutput.copy());
         clearInput();
         updateResult();
     }
@@ -128,7 +185,7 @@ public class BlazeComposerInventory extends ItemStackHandler {
                 0,
                 composer.getBlockedSuperPreviewMinPenalty(),
                 composer.getBlockedSuperPreviewMaxPenalty(),
-                stacks.get(0),
-                stacks.get(1));
+                getStackInSlot(0),
+                getStackInSlot(1));
     }
 }

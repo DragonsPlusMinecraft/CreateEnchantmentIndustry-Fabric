@@ -35,14 +35,6 @@ public enum BlazeForgerMode implements StringRepresentable {
         this.name = name;
     }
 
-    public static BlazeForgerMode fromLegacyOperation(int operation) {
-        return switch (operation) {
-            case 1 -> APPLY;
-            case 2 -> EXTRACT;
-            default -> MERGE;
-        };
-    }
-
     @Override
     public String getSerializedName() {
         return name;

@@ -20,7 +20,6 @@ package plus.dragons.createenchantmentindustry.common.processing.enchanter;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.Enchantment;
 import plus.dragons.createenchantmentindustry.common.item.CEIItemData;
 
 public class EnchantingTemplateItem extends Item {
@@ -41,11 +40,6 @@ public class EnchantingTemplateItem extends Item {
 
     public boolean isSpecial() {
         return special;
-    }
-
-    @Override
-    public boolean canApplyAtEnchantingTable(ItemStack stack, Enchantment enchantment) {
-        return true;
     }
 
     @Override

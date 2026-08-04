@@ -27,15 +27,16 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
-import plus.dragons.createdragonsplus.common.registry.CDPItems;
 import plus.dragons.createdragonsplus.data.tag.ItemTagRegistry;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
 import plus.dragons.createenchantmentindustry.data.CEIConditionalLootTables;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.CEIACommon;
 
 public class CEIAItems {
-    private static final TagKey<Item> FORGE_BUCKETS = TagKey.create(
-            Registries.ITEM, new ResourceLocation("forge", "buckets"));
+    private static final TagKey<Item> COMMON_BUCKETS = TagKey.create(
+            Registries.ITEM, new ResourceLocation("c", "buckets"));
+    private static final TagKey<Item> COMMON_DRAGON_BREATH_BUCKETS = TagKey.create(
+            Registries.ITEM, new ResourceLocation("c", "buckets/dragon_breath"));
     public static final ModTags MOD_TAGS = new ModTags();
 
     public static final ItemEntry<SequencedAssemblyItem> INCOMPLETE_BRASS_BOOKSHELF = REGISTRATE
@@ -47,9 +48,9 @@ public class CEIAItems {
     public static class ModTags extends ItemTagRegistry {
         public ModTags() {
             super(CEIACommon.ID);
-            addOptional(AllTags.AllItemTags.UPRIGHT_ON_BELT.tag, new ResourceLocation("apotheosis", "infused_breath"));
-            addOptional(FORGE_BUCKETS, CEICommon.asResource("infused_dragon_breath_bucket"));
-            addOptional(CDPItems.COMMON_TAGS.dragonBreathBuckets, CEICommon.asResource("infused_dragon_breath_bucket"));
+            addOptional(AllTags.AllItemTags.UPRIGHT_ON_BELT.tag, new ResourceLocation("zenith", "infused_breath"));
+            addOptional(COMMON_BUCKETS, CEICommon.asResource("infused_dragon_breath_bucket"));
+            addOptional(COMMON_DRAGON_BREATH_BUCKETS, CEICommon.asResource("infused_dragon_breath_bucket"));
             addOptionalBlockDrop("infuser");
             addOptionalBlockDrop("brass_bookshelf");
             addOptionalBlockDrop("creative_bookshelf");

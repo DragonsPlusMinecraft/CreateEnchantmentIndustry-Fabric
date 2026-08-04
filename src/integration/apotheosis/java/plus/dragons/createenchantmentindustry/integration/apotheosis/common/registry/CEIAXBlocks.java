@@ -28,13 +28,12 @@ import com.simibubi.create.foundation.data.AssetLookup;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.tterrag.registrate.providers.RegistrateTagsProvider;
 import com.tterrag.registrate.util.entry.BlockEntry;
-import net.minecraft.client.renderer.RenderType;
+import io.github.fabricators_of_create.porting_lib.models.generators.ModelFile;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.MapColor;
-import net.minecraftforge.eventbus.api.IEventBus;
 import plus.dragons.createdragonsplus.common.processing.blaze.BlazeBlock;
 import plus.dragons.createdragonsplus.common.processing.blaze.BlazeMovementBehaviour;
 import plus.dragons.createdragonsplus.data.tag.IntrinsicTagRegistry;
@@ -67,20 +66,20 @@ public class CEIAXBlocks {
             .block("blaze_composer", BlazeComposerBlock::new)
             .initialProperties(SharedProperties::softMetal)
             .properties(p -> p.mapColor(MapColor.COLOR_GRAY).lightLevel(BlazeBlock::getLight))
-            .addLayer(() -> RenderType::cutoutMipped)
             .onRegister(block -> MovementBehaviour.REGISTRY.register(block, new BlazeMovementBehaviour()))
             .blockstate((ctx, prov) -> prov.horizontalBlock(
                     ctx.getEntry(),
-                    prov.models().getExistingFile(Create.asResource("block/blaze_burner/block"))))
+                    new ModelFile.UncheckedModelFile(Create.asResource("block/blaze_burner/block"))))
             .item(BlazeComposerBlockItem::new)
-            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(),
-                    Create.asResource("block/blaze_burner/block_with_blaze")))
+            .model((ctx, prov) -> prov.getBuilder(ctx.getName())
+                    .parent(new ModelFile.UncheckedModelFile(
+                            Create.asResource("block/blaze_burner/block_with_blaze"))))
             .build()
             .register();
 
     public static final ModTags MOD_TAGS = new ModTags();
 
-    public static void register(IEventBus modBus) {
+    public static void register() {
         REGISTRATE.registerBlockTags(MOD_TAGS);
     }
 

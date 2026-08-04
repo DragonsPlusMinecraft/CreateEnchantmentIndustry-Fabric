@@ -77,9 +77,4 @@ public class ExperienceLanternBlock extends WrenchableDirectionalBlock implement
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
         return CEIShapes.LANTERN_SHAPE.get(pState.getValue(FACING));
     }
-
-    @Override
-    public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
-        return state.getValue(LIGHT);
-    }
 }

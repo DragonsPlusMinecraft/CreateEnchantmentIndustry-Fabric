@@ -23,12 +23,12 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.compat.jei.category.animations.AnimatedKinetics;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import net.createmod.catnip.animation.AnimationTickHolder;
 import net.createmod.catnip.gui.UIRenderHelper;
-import net.createmod.catnip.platform.ForgeCatnipServices;
+import net.createmod.catnip.platform.FabricCatnipServices;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.LightTexture;
-import net.minecraftforge.fluids.FluidStack;
 import plus.dragons.createenchantmentindustry.client.model.CEIPartialModels;
 import plus.dragons.createenchantmentindustry.common.fluids.printer.PrinterRenderer;
 import plus.dragons.createenchantmentindustry.common.registry.CEIBlocks;
@@ -92,7 +92,7 @@ public class AnimatedPrinter extends AnimatedKinetics {
         poseStack.scale(16, 16, 16);
         float from = 3f / 16f;
         float to = 17f / 16f;
-        ForgeCatnipServices.FLUID_RENDERER.renderFluidBox(fluid,
+        FabricCatnipServices.FLUID_RENDERER.renderFluidBox(fluid,
                 from, from, from,
                 to, to, to,
                 graphics.bufferSource(), poseStack, LightTexture.FULL_BRIGHT,

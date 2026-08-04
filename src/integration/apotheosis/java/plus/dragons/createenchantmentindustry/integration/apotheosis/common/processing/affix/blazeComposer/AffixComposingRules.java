@@ -27,6 +27,7 @@ import dev.shadowsoffire.apotheosis.adventure.loot.LootRarity;
 import dev.shadowsoffire.placebo.reload.DynamicHolder;
 import java.util.HashMap;
 import java.util.Map;
+import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
@@ -36,7 +37,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.affix.blazeComposer.template.AffixTemplateEntry;
 
-public class AffixComposingRules extends SimplePreparableReloadListener<AffixComposingRules.LoadedRules> {
+public class AffixComposingRules extends SimplePreparableReloadListener<AffixComposingRules.LoadedRules>
+        implements IdentifiableResourceReloadListener {
     public static final AffixComposingRules INSTANCE = new AffixComposingRules();
     private static final Logger LOGGER = LoggerFactory.getLogger(AffixComposingRules.class);
     private static final Gson GSON = new Gson();
@@ -46,6 +48,11 @@ public class AffixComposingRules extends SimplePreparableReloadListener<AffixCom
     private volatile LoadedRules rules = LoadedRules.EMPTY;
 
     private AffixComposingRules() {}
+
+    @Override
+    public ResourceLocation getFabricId() {
+        return new ResourceLocation("create_enchantment_industry", "affix_composing_rules");
+    }
 
     @Override
     protected LoadedRules prepare(ResourceManager resourceManager, ProfilerFiller profiler) {

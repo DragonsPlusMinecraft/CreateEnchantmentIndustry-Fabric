@@ -18,24 +18,28 @@
 
 package plus.dragons.createenchantmentindustry.data;
 
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.fabricmc.fabric.api.datagen.v1.provider.FabricDynamicRegistryProvider;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.PackOutput;
-import net.minecraftforge.common.data.DatapackBuiltinEntriesProvider;
 import plus.dragons.createdragonsplus.util.CodeReference;
-import plus.dragons.createenchantmentindustry.common.CEICommon;
 import plus.dragons.createenchantmentindustry.common.registry.CEIDamageTypes;
 
 @CodeReference(source = "create", license = "mit", targets = "com.simibubi.create.infrastructure.data.GenerateEntriesProvider")
-public class CEIGenerateEntriesProvider extends DatapackBuiltinEntriesProvider {
-    private static final RegistrySetBuilder BUILDER = new RegistrySetBuilder()
-            .add(Registries.DAMAGE_TYPE, CEIDamageTypes::bootstrap);
+public class CEIGenerateEntriesProvider extends FabricDynamicRegistryProvider {
+    public CEIGenerateEntriesProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registries) {
+        super(output, registries);
+    }
 
-    public CEIGenerateEntriesProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
-        super(output, registries, BUILDER, Set.of(CEICommon.ID));
+    @Override
+    protected void configure(HolderLookup.Provider registries, Entries entries) {
+        entries.addAll(registries.lookupOrThrow(Registries.DAMAGE_TYPE));
+    }
+
+    public static RegistrySetBuilder addBootstraps(RegistrySetBuilder builder) {
+        return builder.add(Registries.DAMAGE_TYPE, CEIDamageTypes::bootstrap);
     }
 
     @Override

@@ -1,4 +1,5 @@
 {
+  "replace": false,
   "values": [
     {
       "id": "create_enchantment_industry:blaze_composer",

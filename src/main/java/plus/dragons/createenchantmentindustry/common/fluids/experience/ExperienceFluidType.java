@@ -18,9 +18,11 @@
 
 package plus.dragons.createenchantmentindustry.common.fluids.experience;
 
-import com.tterrag.registrate.builders.FluidBuilder.FluidTypeFactory;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidType;
 import java.util.function.Supplier;
 import net.createmod.catnip.theme.Color;
+import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -28,11 +30,13 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.level.pathfinder.BlockPathTypes;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 import plus.dragons.createdragonsplus.common.fluids.SolidRenderFluidType;
+import plus.dragons.createenchantmentindustry.common.CEICommon;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
 
 public class ExperienceFluidType extends SolidRenderFluidType {
@@ -40,12 +44,22 @@ public class ExperienceFluidType extends SolidRenderFluidType {
         super(properties, stillTexture, flowingTexture, tintColor, fogColor, fogDistanceModifier);
     }
 
-    public static FluidTypeFactory create() {
+    public static ExperienceFluidType create(ResourceLocation stillTexture, ResourceLocation flowingTexture) {
         Vector3f fogColor = new Color(0x52b64c).asVectorF();
-        return (properties, stillTexture, flowingTexture) -> new ExperienceFluidType(properties,
+        FluidType.Properties properties = FluidType.Properties.create()
+                .descriptionId(Util.makeDescriptionId("fluid", CEICommon.asResource("experience")))
+                .rarity(Rarity.UNCOMMON)
+                .lightLevel(15)
+                .fallDistanceModifier(0F)
+                .canPushEntity(false)
+                .canSwim(false)
+                .canDrown(false)
+                .pathType(BlockPathTypes.BLOCKED)
+                .adjacentPathType(BlockPathTypes.BLOCKED);
+        return new ExperienceFluidType(properties,
                 stillTexture,
                 flowingTexture,
-                NO_TINT,
+                -1,
                 fogColor,
                 ExperienceFluidType::getExperienceFluidVisibility);
     }

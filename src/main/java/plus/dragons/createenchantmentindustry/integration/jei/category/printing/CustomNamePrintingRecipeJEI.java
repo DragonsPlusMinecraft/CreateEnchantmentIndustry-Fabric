@@ -19,14 +19,15 @@
 package plus.dragons.createenchantmentindustry.integration.jei.category.printing;
 
 import com.mojang.serialization.MapCodec;
-import mezz.jei.api.forge.ForgeTypes;
+import com.simibubi.create.compat.jei.category.CreateRecipeCategory;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
+import mezz.jei.api.fabric.constants.FabricTypes;
 import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
 import mezz.jei.api.gui.ingredient.IRecipeSlotDrawable;
 import mezz.jei.api.recipe.IFocusGroup;
 import net.minecraft.ChatFormatting;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.fluids.FluidStack;
 import plus.dragons.createdragonsplus.util.Pairs;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
 import plus.dragons.createenchantmentindustry.common.item.CEIItemData;
@@ -59,7 +60,7 @@ public enum CustomNamePrintingRecipeJEI implements PrintingRecipeJEI {
 
     @Override
     public void setFluid(IRecipeSlotBuilder slot) {
-        CEIDataMaps.getSourceFluidEntries(CEIDataMaps.PRINTING_CUSTOM_NAME_INGREDIENT)
+        CEIDataMaps.getSourceFluidAmountEntries(CEIDataMaps.PRINTING_CUSTOM_NAME_INGREDIENT)
                 .forEach(Pairs.accept(slot::addFluidStack));
     }
 
@@ -76,7 +77,9 @@ public enum CustomNamePrintingRecipeJEI implements PrintingRecipeJEI {
     @Override
     public void onDisplayedIngredientsUpdate(IRecipeSlotDrawable baseSlot, IRecipeSlotDrawable templateSlot, IRecipeSlotDrawable fluidSlot, IRecipeSlotDrawable outputSlot, IFocusGroup focuses) {
         var name = CEILang.translate("recipe.printing.custom_name.template").component();
-        var fluidStack = fluidSlot.getDisplayedIngredient(ForgeTypes.FLUID_STACK).orElse(FluidStack.EMPTY);
+        var fluidStack = fluidSlot.getDisplayedIngredient(FabricTypes.FLUID_STACK)
+                .map(CreateRecipeCategory::fromJei)
+                .orElse(FluidStack.EMPTY);
         var style = CEIDataMaps.PRINTING_CUSTOM_NAME_STYLE.get(fluidStack.getFluid());
         if (style == null)
             style = CEIDyeFluids.style(fluidStack).orElse(null);

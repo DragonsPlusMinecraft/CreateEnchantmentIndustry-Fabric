@@ -19,28 +19,30 @@
 package plus.dragons.createenchantmentindustry.integration.apotheosis.common.registry;
 
 import dev.shadowsoffire.apotheosis.Apotheosis;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.registry.CEIACreativeModeTabs;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import plus.dragons.createenchantmentindustry.common.CEICommon;
 
 public class CEIAXCreativeModeTabs {
-    public static void register(IEventBus modBus) {
-        modBus.addListener(CEIAXCreativeModeTabs::buildContents);
-    }
+    private static boolean registered;
 
-    @SubscribeEvent(priority = EventPriority.LOW)
-    public static void buildContents(BuildCreativeModeTabContentsEvent event) {
-        if (Apotheosis.enableAdventure && event.getTabKey() == CEIACreativeModeTabs.APOTHEOTIC.getKey()) {
-            event.accept(CEIAXBlocks.GEM_CUTTER.get());
-            event.accept(CEIAXBlocks.AFFIX_AUGMENTOR.get());
-            event.accept(CEIAXBlocks.BLAZE_COMPOSER.get());
-            event.accept(CEIAXItems.BRASS_AFFIX_TEMPLATE.get());
-            event.accept(CEIAXItems.CRYSTAL_AFFIX_TEMPLATE.get());
-            event.accept(CEIAXItems.APOTHEOTIC_AFFIX_TEMPLATE.get());
-            event.accept(CEIAXFluids.APOTHEOTIC_ESSENCE.getBucket().get());
-            event.accept(CEIAXFluids.CRYSTAL_ESSENCE.getBucket().get());
-        }
+    public static void register() {
+        if (registered)
+            return;
+        registered = true;
+        var key = ResourceKey.create(Registries.CREATIVE_MODE_TAB, CEICommon.asResource("apotheotic"));
+        ItemGroupEvents.modifyEntriesEvent(key).register(entries -> {
+            if (!Apotheosis.enableAdventure)
+                return;
+            entries.accept(CEIAXBlocks.GEM_CUTTER.get());
+            entries.accept(CEIAXBlocks.AFFIX_AUGMENTOR.get());
+            entries.accept(CEIAXBlocks.BLAZE_COMPOSER.get());
+            entries.accept(CEIAXItems.BRASS_AFFIX_TEMPLATE.get());
+            entries.accept(CEIAXItems.CRYSTAL_AFFIX_TEMPLATE.get());
+            entries.accept(CEIAXItems.APOTHEOTIC_AFFIX_TEMPLATE.get());
+            entries.accept(CEIAXFluids.APOTHEOTIC_ESSENCE.getBucket().get());
+            entries.accept(CEIAXFluids.CRYSTAL_ESSENCE.getBucket().get());
+        });
     }
 }

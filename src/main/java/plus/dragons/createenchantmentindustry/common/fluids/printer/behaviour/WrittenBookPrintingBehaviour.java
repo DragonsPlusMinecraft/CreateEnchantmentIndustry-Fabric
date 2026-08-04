@@ -21,6 +21,7 @@ package plus.dragons.createenchantmentindustry.common.fluids.printer.behaviour;
 import com.mojang.serialization.DataResult;
 import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
 import com.simibubi.create.foundation.utility.CreateLang;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -33,12 +34,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fluids.FluidStack;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
 import plus.dragons.createenchantmentindustry.common.fluids.printer.PrinterBlockEntity;
 import plus.dragons.createenchantmentindustry.common.item.CEIItemData;
 import plus.dragons.createenchantmentindustry.common.registry.CEIDataMaps;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 import plus.dragons.createenchantmentindustry.util.CEILang;
 
 public class WrittenBookPrintingBehaviour implements PrintingBehaviour {
@@ -96,8 +97,8 @@ public class WrittenBookPrintingBehaviour implements PrintingBehaviour {
     }
 
     @Override
-    public int getRequiredFluidAmount(Level level, ItemStack stack, FluidStack fluidStack) {
-        return getCost(fluidStack).orElse(0);
+    public long getRequiredFluidAmount(Level level, ItemStack stack, FluidStack fluidStack) {
+        return CEIFluidUnits.millibuckets(getCost(fluidStack).orElse(0));
     }
 
     @Override

@@ -80,7 +80,7 @@ public enum CopyPrintingRecipeJEI implements PrintingRecipeJEI {
 
     @Override
     public void setFluid(IRecipeSlotBuilder slot) {
-        CEIDataMaps.getSourceFluidEntries(CEIDataMaps.PRINTING_COPY_INGREDIENT)
+        CEIDataMaps.getSourceFluidAmountEntries(CEIDataMaps.PRINTING_COPY_INGREDIENT)
                 .forEach(Pairs.accept(slot::addFluidStack));
     }
 

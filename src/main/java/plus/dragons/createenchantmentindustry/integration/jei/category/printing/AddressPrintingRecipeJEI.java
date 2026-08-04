@@ -54,7 +54,7 @@ public enum AddressPrintingRecipeJEI implements PrintingRecipeJEI {
 
     @Override
     public void setFluid(IRecipeSlotBuilder slot) {
-        CEIDataMaps.getSourceFluidEntries(CEIDataMaps.PRINTING_ADDRESS_INGREDIENT)
+        CEIDataMaps.getSourceFluidAmountEntries(CEIDataMaps.PRINTING_ADDRESS_INGREDIENT)
                 .forEach(Pairs.accept(slot::addFluidStack));
     }
 

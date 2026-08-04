@@ -21,31 +21,29 @@ package plus.dragons.createenchantmentindustry.integration.apothic_enchanting.co
 import static plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.registry.CEIABlocks.*;
 
 import dev.shadowsoffire.apotheosis.Apotheosis;
-import net.minecraft.core.registries.Registries;
+import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
 import plus.dragons.createenchantmentindustry.util.CEILang;
 
 public class CEIACreativeModeTabs {
-    private static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister
-            .create(Registries.CREATIVE_MODE_TAB, CEICommon.ID);
-    public static final RegistryObject<CreativeModeTab> APOTHEOTIC = TABS.register(
-            "apotheotic", () -> base(CEICommon.asResource("apotheotic")));
+    public static CreativeModeTab APOTHEOTIC;
 
-    public static void register(IEventBus modBus) {
-        TABS.register(modBus);
+    public static void register() {
+        if (APOTHEOTIC != null)
+            return;
+        ResourceLocation id = CEICommon.asResource("apotheotic");
+        APOTHEOTIC = Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, id, base(id));
     }
 
     private static CreativeModeTab base(ResourceLocation id) {
-        return CreativeModeTab.builder()
+        return FabricItemGroup.builder()
                 .title(CEILang.description("itemGroup", id).component())
                 .icon(BRASS_BOOKSHELF::asStack)
                 .displayItems(CEIACreativeModeTabs::buildBaseContents)
-                .withTabsBefore(CEICommon.asResource("base"))
                 .build();
     }
 

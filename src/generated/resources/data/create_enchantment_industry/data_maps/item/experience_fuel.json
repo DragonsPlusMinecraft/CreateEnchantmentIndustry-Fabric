@@ -1,22 +1,28 @@
 {
   "values": {
     "ars_nouveau:experience_gem": {
-      "forge:conditions": [
+      "fabric:load_conditions": [
         {
-          "type": "forge:mod_loaded",
-          "modid": "ars_nouveau"
+          "condition": "fabric:all_mods_loaded",
+          "values": [
+            "ars_nouveau"
+          ]
         }
       ],
-      "forge:value": 3
+      "replace": false,
+      "value": 3
     },
     "ars_nouveau:greater_experience_gem": {
-      "forge:conditions": [
+      "fabric:load_conditions": [
         {
-          "type": "forge:mod_loaded",
-          "modid": "ars_nouveau"
+          "condition": "fabric:all_mods_loaded",
+          "values": [
+            "ars_nouveau"
+          ]
         }
       ],
-      "forge:value": 12
+      "replace": false,
+      "value": 12
     },
     "create:experience_block": 27,
     "create:experience_nugget": 3,
@@ -44,22 +50,28 @@
       "special": true
     },
     "create_sa:heap_of_experience": {
-      "forge:conditions": [
+      "fabric:load_conditions": [
         {
-          "type": "forge:mod_loaded",
-          "modid": "create_sa"
+          "condition": "fabric:all_mods_loaded",
+          "values": [
+            "create_sa"
+          ]
         }
       ],
-      "forge:value": 12
+      "replace": false,
+      "value": 12
     },
     "mysticalagriculture:experience_droplet": {
-      "forge:conditions": [
+      "fabric:load_conditions": [
         {
-          "type": "forge:mod_loaded",
-          "modid": "mysticalagriculture"
+          "condition": "fabric:all_mods_loaded",
+          "values": [
+            "mysticalagriculture"
+          ]
         }
       ],
-      "forge:value": 10
+      "replace": false,
+      "value": 10
     }
   }
 }

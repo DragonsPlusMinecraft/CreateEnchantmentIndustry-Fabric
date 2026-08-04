@@ -21,13 +21,12 @@ package plus.dragons.createenchantmentindustry.common.registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraftforge.eventbus.api.IEventBus;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
 
 public class CEIEnchantments {
     public static final ModTags MOD_TAGS = new ModTags();
 
-    public static void register(IEventBus modBus) {}
+    public static void register() {}
 
     public static class ModTags {
         public final TagKey<Enchantment> enchanting = tag("blaze_enchanter/enchanting");

@@ -21,7 +21,6 @@ package plus.dragons.createenchantmentindustry.common.registry;
 import static plus.dragons.createenchantmentindustry.common.CEICommon.REGISTRATE;
 
 import com.tterrag.registrate.util.entry.RegistryEntry;
-import net.minecraftforge.eventbus.api.IEventBus;
 import plus.dragons.createenchantmentindustry.common.fluids.lantern.ExperienceLanternMountedFluidStorageType;
 
 public class CEIMountedStorageTypes {
@@ -29,5 +28,5 @@ public class CEIMountedStorageTypes {
             .mountedFluidStorage("experience_lantern", ExperienceLanternMountedFluidStorageType::new)
             .register();
 
-    public static void register(IEventBus modBus) {}
+    public static void register() {}
 }

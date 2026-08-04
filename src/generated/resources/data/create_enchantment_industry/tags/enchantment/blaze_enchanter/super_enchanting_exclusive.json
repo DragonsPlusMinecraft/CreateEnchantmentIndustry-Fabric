@@ -1,7 +1,16 @@
 {
+  "replace": false,
   "values": [
     {
       "id": "minecraft:frost_walker",
+      "required": false
+    },
+    {
+      "id": "zenith:infusion",
+      "required": false
+    },
+    {
+      "id": "minecraft:mending",
       "required": false
     },
     {
@@ -10,14 +19,6 @@
     },
     {
       "id": "minecraft:swift_sneak",
-      "required": false
-    },
-    {
-      "id": "minecraft:mending",
-      "required": false
-    },
-    {
-      "id": "apotheosis:infusion",
       "required": false
     }
   ]

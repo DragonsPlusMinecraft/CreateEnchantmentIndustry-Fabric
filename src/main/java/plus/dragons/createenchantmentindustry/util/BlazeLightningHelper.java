@@ -18,6 +18,7 @@
 
 package plus.dragons.createenchantmentindustry.util;
 
+import io.github.fabricators_of_create.porting_lib.entity.extensions.EntityExtensions;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -62,7 +63,7 @@ public class BlazeLightningHelper {
         var lightning = EntityType.LIGHTNING_BOLT.create(level);
         if (lightning == null)
             return false;
-        lightning.getPersistentData().putBoolean(LIGHTNING_BOLT_EXPERIENCE_CHARGE_KEY, true);
+        ((EntityExtensions) lightning).getCustomData().putBoolean(LIGHTNING_BOLT_EXPERIENCE_CHARGE_KEY, true);
         Optional<BlockPos> rodPos = level.getPoiManager().findAll(
                 poi -> poi.is(LIGHTNING_ROD_POINT_OF_INTEREST_TYPES),
                 pos -> pos.getY() == level.getHeight(Heightmap.Types.WORLD_SURFACE, pos.getX(), pos.getZ()) - 1,

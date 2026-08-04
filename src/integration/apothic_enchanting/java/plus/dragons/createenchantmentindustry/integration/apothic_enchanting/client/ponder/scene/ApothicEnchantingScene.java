@@ -40,12 +40,12 @@ import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import plus.dragons.createenchantmentindustry.common.registry.CEIFluids;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.contraptions.actors.enderWovenBag.EnderWovenBagBlockEntity;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.processing.infuser.InfuserBlockEntity;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.processing.infuser.InfusionStats;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
+import plus.dragons.createenchantmentindustry.util.CEITransfer;
 
 public class ApothicEnchantingScene {
     public static void infuser(SceneBuilder builder, SceneBuildingUtil util) {
@@ -129,7 +129,10 @@ public class ApothicEnchantingScene {
                 .pointAt(infuserVec);
         scene.idle(10);
         scene.world().modifyBlockEntity(infuserPos, InfuserBlockEntity.class,
-                be -> be.getFluidHandler(null).fill(new FluidStack(CEIFluids.EXPERIENCE.get(), 3000), IFluidHandler.FluidAction.EXECUTE));
+                be -> CEITransfer.insert(
+                        be.getFluidStorage(null),
+                        CEIFluidUnits.stack(CEIFluids.EXPERIENCE.getSource(), 3000),
+                        false));
         scene.idle(80);
 
         var carrot = Items.CARROT.getDefaultInstance();

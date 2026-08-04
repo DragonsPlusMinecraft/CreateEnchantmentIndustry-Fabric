@@ -35,8 +35,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import plus.dragons.createdragonsplus.common.processing.blaze.BlazeBlock;
 import plus.dragons.createenchantmentindustry.client.ponder.CEIPonderScenes;
 import plus.dragons.createenchantmentindustry.common.processing.forger.BlazeForgerBlockEntity;
@@ -44,6 +42,8 @@ import plus.dragons.createenchantmentindustry.common.processing.forger.BlazeForg
 import plus.dragons.createenchantmentindustry.common.registry.CEIBlocks;
 import plus.dragons.createenchantmentindustry.common.registry.CEIFluids;
 import plus.dragons.createenchantmentindustry.common.registry.CEIItems;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
+import plus.dragons.createenchantmentindustry.util.CEITransfer;
 
 public class ForgerScene {
     public static void basic(SceneBuilder builder, SceneBuildingUtil util) {
@@ -62,12 +62,14 @@ public class ForgerScene {
         scene.idle(20);
         scene.world().modifyBlockEntity(util.grid().at(1, 1, 3), FluidTankBlockEntity.class, be -> {
             var ctrl = be.getControllerBE();
-            if (ctrl != null) ctrl.getTankInventory().fill(new FluidStack(CEIFluids.EXPERIENCE.get(), 8000), IFluidHandler.FluidAction.EXECUTE);
+            if (ctrl != null)
+                CEITransfer.insertMillibuckets(ctrl.getTankInventory(), CEIFluids.EXPERIENCE.getSource(), 8000, false);
         });
         scene.idle(20);
         scene.world().modifyBlockEntity(util.grid().at(1, 1, 3), FluidTankBlockEntity.class, be -> {
             var ctrl = be.getControllerBE();
-            if (ctrl != null) ctrl.getTankInventory().fill(new FluidStack(CEIFluids.EXPERIENCE.get(), 8000), IFluidHandler.FluidAction.EXECUTE);
+            if (ctrl != null)
+                CEITransfer.insertMillibuckets(ctrl.getTankInventory(), CEIFluids.EXPERIENCE.getSource(), 8000, false);
         });
         scene.idle(30);
 
@@ -80,7 +82,8 @@ public class ForgerScene {
         scene.world().setKineticSpeed(util.select().position(1, 1, 2), 128);
         scene.idle(10);
         scene.world().modifyBlockEntity(util.grid().at(2, 2, 1), BlazeForgerBlockEntity.class,
-                be -> be.getNormalTank().fill(new FluidStack(CEIFluids.EXPERIENCE.get(), 4000), IFluidHandler.FluidAction.EXECUTE));
+                be -> CEITransfer.insertMillibuckets(
+                        be.getNormalTank(), CEIFluids.EXPERIENCE.getSource(), 4000, false));
         scene.world().modifyBlock(util.grid().at(2, 2, 1), bs -> bs.setValue(BlazeBlock.HEAT_LEVEL, BlazeBurnerBlock.HeatLevel.KINDLED), false);
         scene.idle(55);
 
@@ -190,7 +193,7 @@ public class ForgerScene {
         scene.overlay().showControls(util.vector().centerOf(2, 3, 1), Pointing.DOWN, 20).rightClick().withItem(CEIItems.EXPERIENCE_CAKE.asStack());
         scene.idle(30);
         scene.world().modifyBlockEntity(util.grid().at(2, 2, 1), BlazeForgerBlockEntity.class,
-                be -> be.getSpecialTank().setFluid(new FluidStack(CEIFluids.EXPERIENCE.get(), 4000)));
+                be -> be.getSpecialTank().setFluid(CEIFluidUnits.stack(CEIFluids.EXPERIENCE.getSource(), 4000)));
         scene.world().modifyBlock(util.grid().at(2, 2, 1), bs -> bs.setValue(BlazeBlock.HEAT_LEVEL, BlazeBurnerBlock.HeatLevel.SEETHING), false);
         scene.idle(20);
 
@@ -285,7 +288,7 @@ public class ForgerScene {
         scene.idle(5);
         scene.world().modifyBlockEntity(util.grid().at(2, 2, 1), BlazeForgerBlockEntity.class,
                 be -> {
-                    be.getSpecialTank().setFluid(new FluidStack(CEIFluids.EXPERIENCE.get(), 4000));
+                    be.getSpecialTank().setFluid(CEIFluidUnits.stack(CEIFluids.EXPERIENCE.getSource(), 4000));
                     be.setMode(BlazeForgerMode.APPLY);
                 });
         scene.idle(40);
@@ -377,7 +380,7 @@ public class ForgerScene {
         scene.world().instructArm(armPos, ArmBlockEntity.Phase.MOVE_TO_OUTPUT, CEIItems.EXPERIENCE_CAKE.asStack(), 0);
         scene.idle(20);
         scene.world().modifyBlockEntity(util.grid().at(2, 1, 2), BlazeForgerBlockEntity.class,
-                be -> be.getSpecialTank().setFluid(new FluidStack(CEIFluids.EXPERIENCE.get(), 4000)));
+                be -> be.getSpecialTank().setFluid(CEIFluidUnits.stack(CEIFluids.EXPERIENCE.getSource(), 4000)));
         scene.world().modifyBlock(util.grid().at(2, 1, 2), bs -> bs.setValue(BlazeBlock.HEAT_LEVEL, BlazeBurnerBlock.HeatLevel.SEETHING), false);
         scene.world().instructArm(armPos, ArmBlockEntity.Phase.MOVE_TO_INPUT, ItemStack.EMPTY, -1);
         scene.idle(20);

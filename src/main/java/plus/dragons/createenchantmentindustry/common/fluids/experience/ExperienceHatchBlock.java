@@ -23,6 +23,12 @@ import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 import com.simibubi.create.foundation.block.ProperWaterloggedBlock;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
+import net.fabricmc.fabric.api.entity.FakePlayer;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -44,11 +50,6 @@ import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createenchantmentindustry.common.registry.CEIAdvancements;
 import plus.dragons.createenchantmentindustry.common.registry.CEIBlockEntities;
@@ -101,7 +102,7 @@ public class ExperienceHatchBlock extends HorizontalDirectionalBlock
         if (blockEntity == null)
             return InteractionResult.PASS;
 
-        IFluidHandler tankCapability = blockEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, null).orElse(null);
+        Storage<FluidVariant> tankCapability = FluidStorage.SIDED.find(level, blockEntity.getBlockPos(), null);
         if (tankCapability == null)
             return InteractionResult.PASS;
 
@@ -111,7 +112,14 @@ public class ExperienceHatchBlock extends HorizontalDirectionalBlock
 
         if (player.isSecondaryUseActive()) {
             FluidStack fluid = filter.getFluidToDrain();
-            fluid = tankCapability.drain(fluid, FluidAction.EXECUTE);
+            long extracted;
+            try (Transaction transaction = Transaction.openOuter()) {
+                extracted = tankCapability.extract(fluid.getType(), fluid.getAmount(), transaction);
+                if (extracted == 0)
+                    return InteractionResult.PASS;
+                transaction.commit();
+            }
+            fluid = new FluidStack(fluid.getType(), extracted);
             if (fluid.isEmpty())
                 return InteractionResult.PASS;
             blockEntity.setChanged();
@@ -124,7 +132,13 @@ public class ExperienceHatchBlock extends HorizontalDirectionalBlock
         } else {
             int experience = ExperienceHelper.getExperienceForPlayer(player);
             FluidStack fluid = filter.getFluidToFill(experience);
-            int filled = tankCapability.fill(fluid, FluidAction.EXECUTE);
+            long filled;
+            try (Transaction transaction = Transaction.openOuter()) {
+                filled = tankCapability.insert(fluid.getType(), fluid.getAmount(), transaction);
+                if (filled == 0)
+                    return InteractionResult.PASS;
+                transaction.commit();
+            }
             if (filled == 0)
                 return InteractionResult.PASS;
             blockEntity.setChanged();

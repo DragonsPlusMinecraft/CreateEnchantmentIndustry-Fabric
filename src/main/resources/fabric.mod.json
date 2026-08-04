@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "${mod_description}",
+  "authors": ["${mod_authors}"],
+  "contact": {
+    "sources": "${mod_github}",
+    "issues": "${mod_github}/issues"
+  },
+  "license": "${mod_license}",
+  "icon": "icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["plus.dragons.createenchantmentindustry.common.CEICommon"],
+    "client": ["plus.dragons.createenchantmentindustry.client.CEIClient"],
+    "fabric-datagen": ["plus.dragons.createenchantmentindustry.data.CEIData"],
+    "jei_mod_plugin": ["plus.dragons.createenchantmentindustry.integration.jei.category.CEIJeiPlugin"]
+  },
+  "mixins": [
+    "create_enchantment_industry.mixins.json",
+    "create_enchantment_industry.apothic_enchanting.mixins.json",
+    "create_enchantment_industry.apotheosis.mixins.json"
+  ],
+  "depends": {
+    "minecraft": "${minecraft_version}",
+    "java": ">=17",
+    "fabricloader": ">=${fabric_loader_version}",
+    "fabric-api": ">=${fabric_api_version}",
+    "create": "${create_version_range}",
+    "create_dragons_plus": "${create_dragons_plus_version}"
+  },
+  "suggests": {
+    "jei": ">=${jei_version}",
+    "zenith": "${zenith_version}"
+  }
+}

@@ -53,7 +53,7 @@ public enum PatternPrintingRecipeJEI implements PrintingRecipeJEI {
 
     @Override
     public void setFluid(IRecipeSlotBuilder slot) {
-        CEIDataMaps.getSourceFluidEntries(CEIDataMaps.PRINTING_PATTERN_INGREDIENT)
+        CEIDataMaps.getSourceFluidAmountEntries(CEIDataMaps.PRINTING_PATTERN_INGREDIENT)
                 .forEach(Pairs.accept(slot::addFluidStack));
     }
 

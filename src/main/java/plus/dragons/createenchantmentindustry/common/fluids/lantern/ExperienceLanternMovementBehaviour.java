@@ -29,11 +29,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import plus.dragons.createenchantmentindustry.common.fluids.experience.ExperienceHelper;
 import plus.dragons.createenchantmentindustry.common.registry.CEIFluids;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
+import plus.dragons.createenchantmentindustry.mixin.ExperienceOrbAccessor;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
+import plus.dragons.createenchantmentindustry.util.CEITransfer;
 
 public class ExperienceLanternMovementBehaviour implements MovementBehaviour {
     @Override
@@ -63,7 +64,11 @@ public class ExperienceLanternMovementBehaviour implements MovementBehaviour {
                 else if (playerExp != 0) sum.addAndGet(playerExp);
             });
             if (sum.get() != 0) {
-                var inserted = tank.fill(new FluidStack(CEIFluids.EXPERIENCE.get(), sum.get()), IFluidHandler.FluidAction.EXECUTE);
+                long insertedUnits = CEITransfer.insert(
+                        tank,
+                        CEIFluidUnits.stack(CEIFluids.EXPERIENCE.getSource(), sum.get()),
+                        false);
+                int inserted = Math.toIntExact(CEIFluidUnits.toMillibuckets(insertedUnits));
                 if (inserted != 0) {
                     for (var player : players) {
                         var total = ExperienceHelper.getExperienceForPlayer(player);
@@ -93,14 +98,15 @@ public class ExperienceLanternMovementBehaviour implements MovementBehaviour {
         List<ExperienceOrb> experienceOrbs = level.getEntitiesOfClass(ExperienceOrb.class, effectiveAABB);
         if (!experienceOrbs.isEmpty()) {
             for (var orb : experienceOrbs) {
-                var amount = orb.value;
-                var fluidStack = new FluidStack(CEIFluids.EXPERIENCE.get(), amount);
-                var inserted = tank.fill(fluidStack, IFluidHandler.FluidAction.EXECUTE);
+                int amount = orb.getValue();
+                var fluidStack = CEIFluidUnits.stack(CEIFluids.EXPERIENCE.getSource(), amount);
+                long insertedUnits = CEITransfer.insert(tank, fluidStack, false);
+                int inserted = Math.toIntExact(CEIFluidUnits.toMillibuckets(insertedUnits));
                 if (inserted == amount) {
                     orb.remove(Entity.RemovalReason.DISCARDED);
                 } else {
                     if (inserted != 0) {
-                        orb.value -= inserted;
+                        ((ExperienceOrbAccessor) orb).cei$setValue(amount - inserted);
                     }
                     break;
                 }

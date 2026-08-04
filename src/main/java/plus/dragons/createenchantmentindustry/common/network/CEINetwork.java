@@ -18,53 +18,27 @@
 
 package plus.dragons.createenchantmentindustry.common.network;
 
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
 
-/** The single, versioned Forge network channel used by CEI. */
+/** Fabric play channels used by CEI. */
 public final class CEINetwork {
-    public static final String PROTOCOL_VERSION = "1";
-    public static final int DATA_MAP_SYNC_PACKET_ID = 0;
-    public static final int CONTRAPTION_ENDER_WOVEN_BAG_PACKET_ID = 1;
-
-    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            CEICommon.asResource("main"),
-            () -> PROTOCOL_VERSION,
-            PROTOCOL_VERSION::equals,
-            PROTOCOL_VERSION::equals);
-
-    private static boolean registered;
+    public static final ResourceLocation DATA_MAP_SYNC = CEICommon.asResource("data_map_sync");
+    public static final ResourceLocation ENDER_WOVEN_BAG_TRACKING = CEICommon.asResource("ender_woven_bag_tracking");
 
     private CEINetwork() {}
 
-    public static synchronized void register() {
-        if (registered) {
-            return;
-        }
-        registered = true;
-        registerMessage(
-                DATA_MAP_SYNC_PACKET_ID,
-                CEIDataMapSyncPacket.class,
-                CEIDataMapSyncPacket::encode,
-                CEIDataMapSyncPacket::decode,
-                CEIDataMapSyncPacket::handle,
-                NetworkDirection.PLAY_TO_CLIENT);
+    public static void register() {
+        // Core currently has no C2S receiver. Optional integration receivers register lazily.
     }
 
-    public static <T> void registerMessage(
-            int id,
-            Class<T> type,
-            BiConsumer<T, FriendlyByteBuf> encoder,
-            Function<FriendlyByteBuf, T> decoder,
-            BiConsumer<T, Supplier<NetworkEvent.Context>> handler,
-            NetworkDirection direction) {
-        CHANNEL.registerMessage(id, type, encoder, decoder, handler, java.util.Optional.of(direction));
+    public static void sendDataMapSnapshot(ServerPlayer player) {
+        FriendlyByteBuf buffer = PacketByteBufs.create();
+        CEIDataMapSyncPacket.encode(CEIDataMapSyncPacket.create(), buffer);
+        ServerPlayNetworking.send(player, DATA_MAP_SYNC, buffer);
     }
 }

@@ -21,7 +21,7 @@ package plus.dragons.createenchantmentindustry.integration.apothic_enchanting.co
 import static plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.CEIACommon.REGISTRATE;
 
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
-import net.minecraftforge.eventbus.api.IEventBus;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.contraptions.actors.enderWovenBag.EnderWovenBagBlockEntity;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.contraptions.actors.enderWovenBag.EnderWovenBagRenderer;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.kinetics.bookshelf.brass.BrassBookshelfBlockEntity;
@@ -56,7 +56,11 @@ public class CEIABlockEntities {
             .validBlock(CEIABlocks.ENDER_WOVEN_BAG)
             .register();
 
-    public static void register(IEventBus modBus) {
-        // Forge 1.20 block entities expose capabilities from getCapability directly.
+    public static void register() {}
+
+    public static void registerStorageProviders() {
+        FluidStorage.SIDED.registerForBlockEntity(
+                InfuserBlockEntity::getFluidStorage,
+                INFUSER.get());
     }
 }

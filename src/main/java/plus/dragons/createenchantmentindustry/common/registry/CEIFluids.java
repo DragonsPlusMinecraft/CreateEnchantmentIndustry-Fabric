@@ -23,67 +23,65 @@ import static plus.dragons.createenchantmentindustry.common.CEICommon.REGISTRATE
 import com.simibubi.create.AllTags.AllFluidTags;
 import com.simibubi.create.api.effect.OpenPipeEffectHandler;
 import com.tterrag.registrate.util.entry.FluidEntry;
+import io.github.fabricators_of_create.porting_lib.fluids.PortingLibFluids;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.DispenserBlock;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fluids.ForgeFlowingFluid;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
 import plus.dragons.createdragonsplus.common.fluids.StandardDispenserBehaviour;
+import plus.dragons.createdragonsplus.common.fluids.TypedFlowableFluid;
+import plus.dragons.createenchantmentindustry.common.CEICommon;
 import plus.dragons.createenchantmentindustry.common.fluids.experience.ExperienceEffectHandler;
 import plus.dragons.createenchantmentindustry.common.fluids.experience.ExperienceFluidType;
 import plus.dragons.createenchantmentindustry.common.item.FoilBucketItem;
 
-public class CEIFluids {
-    private static final TagKey<Item> FORGE_BUCKETS = TagKey.create(
-            Registries.ITEM, new ResourceLocation("forge", "buckets"));
-    public static final FluidEntry<ForgeFlowingFluid.Source> EXPERIENCE = new FluidEntry<>(REGISTRATE,
-            RegistryObject.create(REGISTRATE.asResource("experience"), ForgeRegistries.FLUIDS));
-    public static final FluidEntry<ForgeFlowingFluid.Flowing> EXPERIENCE_FLOWING = REGISTRATE
-            .fluid("experience", ExperienceFluidType.create())
+public final class CEIFluids {
+    private static final TagKey<Item> COMMON_BUCKETS = TagKey.create(
+            Registries.ITEM, new ResourceLocation("c", "buckets"));
+    private static final ResourceLocation EXPERIENCE_STILL = CEICommon.asResource("fluid/experience_still");
+    private static final ResourceLocation EXPERIENCE_FLOW = CEICommon.asResource("fluid/experience_flow");
+    public static final ExperienceFluidType EXPERIENCE_TYPE = ExperienceFluidType.create(
+            EXPERIENCE_STILL, EXPERIENCE_FLOW);
+
+    public static final FluidEntry<TypedFlowableFluid.Flowing> EXPERIENCE = REGISTRATE
+            .fluid(
+                    "experience",
+                    EXPERIENCE_STILL,
+                    EXPERIENCE_FLOW,
+                    properties -> new TypedFlowableFluid.Flowing(properties, EXPERIENCE_TYPE))
             .lang("Liquid Experience")
-            .properties(builder -> builder
-                    .rarity(Rarity.UNCOMMON)
-                    .lightLevel(15)
-                    .fallDistanceModifier(0f)
-                    .canPushEntity(false)
-                    .canSwim(false)
-                    .canDrown(false)
-                    .pathType(BlockPathTypes.BLOCKED)
-                    .adjacentPathType(BlockPathTypes.BLOCKED))
-            .fluidProperties(p -> p.explosionResistance(100f))
+            .fluidAttributes(() -> EXPERIENCE_TYPE)
+            .fluidProperties(properties -> properties.blastResistance(100F))
             .tag(AllFluidTags.BOTTOMLESS_DENY.tag)
-            .source(ForgeFlowingFluid.Source::new)
+            .source(properties -> new TypedFlowableFluid.Source(properties, EXPERIENCE_TYPE))
             .block()
-            .properties(properties -> properties
-                    .lightLevel((b) -> 15))
+            .properties(properties -> properties.lightLevel(state -> 15))
             .lang("Liquid Experience")
             .build()
             .bucket(FoilBucketItem::new)
             .lang("Bucket o' Enchanting")
             .properties(properties -> properties.rarity(Rarity.UNCOMMON))
-            .tag(FORGE_BUCKETS)
+            .tag(COMMON_BUCKETS)
             .build()
             .register();
+    /** Kept as a source-compatible alias for integrations that need the flowing variant. */
+    public static final FluidEntry<TypedFlowableFluid.Flowing> EXPERIENCE_FLOWING = EXPERIENCE;
+    private static boolean registered;
 
-    public static void register(IEventBus modBus) {
-        modBus.register(CEIFluids.class);
+    private CEIFluids() {}
+
+    public static void register() {
+        if (registered)
+            return;
+        registered = true;
+        Registry.register(PortingLibFluids.FLUID_TYPES, CEICommon.asResource("experience"), EXPERIENCE_TYPE);
     }
 
-    @SubscribeEvent
-    public static void setup(final FMLCommonSetupEvent event) {
-        event.enqueueWork(() -> OpenPipeEffectHandler.REGISTRY.register(EXPERIENCE.get(), new ExperienceEffectHandler()));
-        event.enqueueWork(CEIFluids::registerDispenserBehavior);
-    }
-
-    private static void registerDispenserBehavior() {
+    public static void initialize() {
+        OpenPipeEffectHandler.REGISTRY.register(EXPERIENCE.getSource(), new ExperienceEffectHandler());
         DispenserBlock.registerBehavior(EXPERIENCE.getBucket().get(), StandardDispenserBehaviour.INSTANCE);
     }
 }

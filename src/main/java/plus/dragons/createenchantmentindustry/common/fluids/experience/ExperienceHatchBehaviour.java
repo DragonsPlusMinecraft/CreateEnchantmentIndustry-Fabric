@@ -25,6 +25,7 @@ import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsBoard;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsFormatter;
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringBehaviour;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -34,9 +35,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.fluids.FluidStack;
 import plus.dragons.createenchantmentindustry.common.registry.CEIDataMaps;
 import plus.dragons.createenchantmentindustry.common.registry.CEIFluids;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 import plus.dragons.createenchantmentindustry.util.CEILang;
 
 public class ExperienceHatchBehaviour extends FilteringBehaviour {
@@ -54,12 +55,13 @@ public class ExperienceHatchBehaviour extends FilteringBehaviour {
         int unit;
         if (Fluids.EMPTY.isSame(fluid)) {
             unit = 1;
-            fluid = CEIFluids.EXPERIENCE.get();
+            fluid = CEIFluids.EXPERIENCE.getSource();
         } else unit = ExperienceHelper.getExperienceFluidUnit(fluid);
         if (unit == 0)
             return FluidStack.EMPTY;
-        int amount = count * POINTS_PER_SCROLL;
-        amount = count == 0 ? Integer.MAX_VALUE : amount * unit;
+        long amount = count == 0
+                ? Long.MAX_VALUE
+                : CEIFluidUnits.millibuckets(Math.multiplyExact((long) count * POINTS_PER_SCROLL, unit));
         return new FluidStack(fluid, amount);
     }
 
@@ -70,12 +72,13 @@ public class ExperienceHatchBehaviour extends FilteringBehaviour {
         int unit;
         if (Fluids.EMPTY.isSame(fluid)) {
             unit = 1;
-            fluid = CEIFluids.EXPERIENCE.get();
+            fluid = CEIFluids.EXPERIENCE.getSource();
         } else unit = ExperienceHelper.getExperienceFluidUnit(fluid);
         if (unit == 0)
             return FluidStack.EMPTY;
-        int amount = count * POINTS_PER_SCROLL;
-        amount = count == 0 ? available : Math.min(available, amount * unit);
+        long amount = CEIFluidUnits.millibuckets(count == 0
+                ? available
+                : Math.min((long) available * unit, (long) count * POINTS_PER_SCROLL * unit));
         return new FluidStack(fluid, amount);
     }
 
@@ -141,7 +144,7 @@ public class ExperienceHatchBehaviour extends FilteringBehaviour {
         FilterItemStack filter = FilterItemStack.of(stack.copy());
         if (!filter.isEmpty()) {
             FluidStack fluid = filter.fluid(getWorld());
-            if (fluid.getFluid() != CEIFluids.EXPERIENCE.get()
+            if (fluid.getFluid() != CEIFluids.EXPERIENCE.getSource()
                     && CEIDataMaps.FLUID_UNIT_EXPERIENCE.get(fluid.getFluid()) == null)
                 return false;
         }

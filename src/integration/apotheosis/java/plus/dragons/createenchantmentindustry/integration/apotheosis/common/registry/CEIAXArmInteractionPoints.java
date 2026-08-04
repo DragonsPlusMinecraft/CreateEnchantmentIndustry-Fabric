@@ -21,7 +21,6 @@ package plus.dragons.createenchantmentindustry.integration.apotheosis.common.reg
 import static plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.CEIACommon.REGISTRATE;
 
 import com.tterrag.registrate.util.entry.RegistryEntry;
-import net.minecraftforge.eventbus.api.IEventBus;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.affix.blazeComposer.BlazeComposerArmInteractionPoint;
 
 public class CEIAXArmInteractionPoints {
@@ -29,5 +28,5 @@ public class CEIAXArmInteractionPoints {
             .armInteractionPoint("blaze_composer", BlazeComposerArmInteractionPoint.Type::new)
             .register();
 
-    public static void register(IEventBus modBus) {}
+    public static void register() {}
 }

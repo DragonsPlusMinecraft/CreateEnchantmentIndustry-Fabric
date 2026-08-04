@@ -23,20 +23,22 @@ import static plus.dragons.createenchantmentindustry.common.CEICommon.REGISTRATE
 import com.simibubi.create.AllTags.AllItemTags;
 import com.simibubi.create.content.materials.ExperienceNuggetItem;
 import com.tterrag.registrate.util.entry.ItemEntry;
+import java.util.function.Supplier;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
 import plus.dragons.createenchantmentindustry.common.item.FoilItem;
 import plus.dragons.createenchantmentindustry.common.processing.enchanter.EnchantingTemplateItem;
 
 public class CEIItems {
+    private static final TagKey<Item> COMMON_NUGGETS = TagKey.create(
+            Registries.ITEM, new ResourceLocation("c", "nuggets"));
     public static final ItemEntry<ExperienceNuggetItem> SUPER_EXPERIENCE_NUGGET = REGISTRATE
             .item("super_experience_nugget", ExperienceNuggetItem::new)
-            .tag(Tags.Items.NUGGETS)
+            .tag(COMMON_NUGGETS)
             .properties(p -> p.rarity(Rarity.RARE))
             .lang("Nugget of Super Experience")
             .register();
@@ -68,8 +70,7 @@ public class CEIItems {
             .lang("Cake Slice o' Enchanting")
             .properties(prop -> prop.rarity(Rarity.RARE))
             .register();
-    public static final RegistryObject<BucketItem> EXPERIENCE_BUCKET = RegistryObject.create(
-            REGISTRATE.asResource("experience_bucket"), ForgeRegistries.ITEMS);
+    public static final Supplier<BucketItem> EXPERIENCE_BUCKET = () -> (BucketItem) CEIFluids.EXPERIENCE.getBucket().get();
 
-    public static void register(IEventBus modBus) {}
+    public static void register() {}
 }

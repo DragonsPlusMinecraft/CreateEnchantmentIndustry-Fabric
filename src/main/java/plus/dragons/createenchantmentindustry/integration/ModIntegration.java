@@ -18,14 +18,14 @@
 
 package plus.dragons.createenchantmentindustry.integration;
 
+import net.fabricmc.fabric.api.resource.conditions.v1.ConditionJsonProvider;
+import net.fabricmc.fabric.api.resource.conditions.v1.DefaultResourceConditions;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.common.crafting.conditions.ModLoadedCondition;
-import net.minecraftforge.fml.ModList;
 
 public enum ModIntegration {
     APOTHIC_ENCHANTING(Constants.APOTHIC_ENCHANTING),
-    APOTHEOSIS(Constants.APOTHEOSIS),
-    TOUHOU_LITTLE_MAID(Constants.TOUHOU_LITTLE_MAID),;
+    APOTHEOSIS(Constants.APOTHEOSIS);
 
     private final String id;
 
@@ -38,21 +38,26 @@ public enum ModIntegration {
     }
 
     public boolean enabled() {
-        return ModList.get().isLoaded(id);
+        return FabricLoader.getInstance().isModLoaded(id);
+    }
+
+    /** Datagen must declare conditioned resources even when Zenith is not installed. */
+    public boolean enabledForRegistration() {
+        return enabled() || System.getProperty("fabric-api.datagen") != null;
     }
 
     public ResourceLocation asResource(String path) {
         return new ResourceLocation(id, path);
     }
 
-    public ModLoadedCondition condition() {
-        return new ModLoadedCondition(id);
+    public ConditionJsonProvider condition() {
+        return DefaultResourceConditions.allModsLoaded(id);
     }
 
-    public static class Constants {
-        // In 1.20.1 the enchanting module is built into Apotheosis 7 rather than a standalone mod.
-        public static final String APOTHIC_ENCHANTING = "apotheosis";
-        public static final String APOTHEOSIS = "apotheosis";
-        public static final String TOUHOU_LITTLE_MAID = "touhou_little_maid";
+    public static final class Constants {
+        public static final String APOTHIC_ENCHANTING = "zenith";
+        public static final String APOTHEOSIS = "zenith";
+
+        private Constants() {}
     }
 }

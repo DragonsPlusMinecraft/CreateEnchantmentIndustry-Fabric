@@ -19,81 +19,63 @@
 package plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.affix.blazeComposer;
 
 import com.simibubi.create.foundation.fluid.SmartFluidTank;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
+import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.registry.CEIAXFluids;
 
-class SuperFuelFluidHandler implements IFluidHandler {
-    private static final int NORMAL_TANK = 0;
-    private static final int SUPER_TANK = 1;
+/** Routes normal fuel first on insertion and super fuel first on extraction. */
+final class SuperFuelFluidHandler implements Storage<FluidVariant> {
     private final Supplier<SmartFluidTank> normalTank;
     private final Supplier<SmartFluidTank> superTank;
     private final BooleanSupplier canFillSuperTank;
 
-    SuperFuelFluidHandler(Supplier<SmartFluidTank> normalTank, Supplier<SmartFluidTank> superTank, BooleanSupplier canFillSuperTank) {
+    SuperFuelFluidHandler(
+            Supplier<SmartFluidTank> normalTank,
+            Supplier<SmartFluidTank> superTank,
+            BooleanSupplier canFillSuperTank) {
         this.normalTank = normalTank;
         this.superTank = superTank;
         this.canFillSuperTank = canFillSuperTank;
     }
 
     @Override
-    public int getTanks() {
-        return 2;
-    }
-
-    @Override
-    public FluidStack getFluidInTank(int tank) {
-        return getTank(tank).getFluid();
-    }
-
-    @Override
-    public int getTankCapacity(int tank) {
-        return getTank(tank).getCapacity();
-    }
-
-    @Override
-    public boolean isFluidValid(int tank, FluidStack stack) {
-        return stack.getFluid() == CEIAXFluids.APOTHEOTIC_ESSENCE.get();
-    }
-
-    @Override
-    public int fill(FluidStack resource, FluidAction action) {
-        if (resource.isEmpty() || !isFluidValid(NORMAL_TANK, resource))
+    public long insert(FluidVariant resource, long maxAmount, TransactionContext transaction) {
+        if (resource.isBlank()
+                || resource.getFluid() != CEIAXFluids.APOTHEOTIC_ESSENCE.getSource()
+                || maxAmount <= 0)
             return 0;
-        int filled = normalTank.get().fill(resource, action);
-        int remaining = resource.getAmount() - filled;
-        if (remaining <= 0 || !canFillSuperTank.getAsBoolean())
-            return filled;
-        FluidStack remainder = resource.copy();
-        remainder.setAmount(remaining);
-        return filled + superTank.get().fill(remainder, action);
+        long inserted = normalTank.get().insert(resource, maxAmount, transaction);
+        long remaining = maxAmount - inserted;
+        if (remaining > 0 && canFillSuperTank.getAsBoolean())
+            inserted += superTank.get().insert(resource, remaining, transaction);
+        return inserted;
     }
 
     @Override
-    public FluidStack drain(FluidStack resource, FluidAction action) {
-        if (resource.isEmpty() || resource.getFluid() != CEIAXFluids.APOTHEOTIC_ESSENCE.get())
-            return FluidStack.EMPTY;
-        return drain(resource.getAmount(), action);
-    }
-
-    @Override
-    public FluidStack drain(int maxDrain, FluidAction action) {
-        if (maxDrain <= 0)
-            return FluidStack.EMPTY;
-        int drained = superTank.get().drain(maxDrain, action).getAmount();
-        int remaining = maxDrain - drained;
+    public long extract(FluidVariant resource, long maxAmount, TransactionContext transaction) {
+        if (resource.isBlank()
+                || resource.getFluid() != CEIAXFluids.APOTHEOTIC_ESSENCE.getSource()
+                || maxAmount <= 0)
+            return 0;
+        long extracted = superTank.get().extract(resource, maxAmount, transaction);
+        long remaining = maxAmount - extracted;
         if (remaining > 0)
-            drained += normalTank.get().drain(remaining, action).getAmount();
-        return drained <= 0 ? FluidStack.EMPTY : new FluidStack(CEIAXFluids.APOTHEOTIC_ESSENCE.get(), drained);
+            extracted += normalTank.get().extract(resource, remaining, transaction);
+        return extracted;
     }
 
-    private SmartFluidTank getTank(int tank) {
-        return switch (tank) {
-            case NORMAL_TANK -> normalTank.get();
-            case SUPER_TANK -> superTank.get();
-            default -> throw new IllegalArgumentException("Tank " + tank + " is not in range [0, 2)");
-        };
+    @Override
+    public Iterator<StorageView<FluidVariant>> iterator() {
+        List<StorageView<FluidVariant>> views = new ArrayList<>(2);
+        normalTank.get().forEach(views::add);
+        superTank.get().forEach(views::add);
+        return views.iterator();
     }
 }

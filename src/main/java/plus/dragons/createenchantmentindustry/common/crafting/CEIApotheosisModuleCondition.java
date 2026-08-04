@@ -22,21 +22,21 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import java.lang.reflect.Field;
 import java.util.Locale;
+import net.fabricmc.fabric.api.resource.conditions.v1.ConditionJsonProvider;
+import net.fabricmc.fabric.api.resource.conditions.v1.ResourceConditions;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
-import net.minecraftforge.common.crafting.CraftingHelper;
-import net.minecraftforge.common.crafting.conditions.ICondition;
-import net.minecraftforge.common.crafting.conditions.IConditionSerializer;
-import net.minecraftforge.fml.ModList;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
 
-/** A stable replacement for the mismatched read/write fields in Apotheosis 7.4.8's module serializer. */
-public final class CEIApotheosisModuleCondition implements ICondition {
+/** Fabric resource condition for the two Zenith modules used by CEI integrations. */
+public final class CEIApotheosisModuleCondition implements ConditionJsonProvider {
     private static final ResourceLocation ID = CEICommon.asResource("apotheosis_module");
-    private static final String APOTHEOSIS_CLASS = "dev.shadowsoffire.apotheosis.Apotheosis";
+    private static final String ZENITH_CLASS = "dev.shadowsoffire.apotheosis.Apotheosis";
 
     public static final CEIApotheosisModuleCondition ENCHANTMENT = new CEIApotheosisModuleCondition(Module.ENCHANTMENT);
     public static final CEIApotheosisModuleCondition ADVENTURE = new CEIApotheosisModuleCondition(Module.ADVENTURE);
+    private static boolean registered;
 
     private final Module module;
 
@@ -45,25 +45,34 @@ public final class CEIApotheosisModuleCondition implements ICondition {
     }
 
     public static void register() {
-        CraftingHelper.register(new Serializer());
+        if (registered)
+            return;
+        registered = true;
+        ResourceConditions.register(ID, json -> new CEIApotheosisModuleCondition(
+                Module.parse(GsonHelper.getAsString(json, "module")))
+                        .test());
+    }
+
+    private boolean test() {
+        if (!FabricLoader.getInstance().isModLoaded("zenith"))
+            return false;
+        try {
+            Class<?> zenith = Class.forName(ZENITH_CLASS, false, CEIApotheosisModuleCondition.class.getClassLoader());
+            Field enabled = zenith.getField(module.fieldName);
+            return enabled.getBoolean(null);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("Unable to read Zenith module flag " + module.fieldName, exception);
+        }
     }
 
     @Override
-    public ResourceLocation getID() {
+    public ResourceLocation getConditionId() {
         return ID;
     }
 
     @Override
-    public boolean test(IContext context) {
-        if (!ModList.get().isLoaded("apotheosis"))
-            return false;
-        try {
-            Class<?> apotheosis = Class.forName(APOTHEOSIS_CLASS, false, CEIApotheosisModuleCondition.class.getClassLoader());
-            Field enabled = apotheosis.getField(module.fieldName);
-            return enabled.getBoolean(null);
-        } catch (ReflectiveOperationException exception) {
-            throw new IllegalStateException("Unable to read Apotheosis module flag " + module.fieldName, exception);
-        }
+    public void writeParameters(JsonObject object) {
+        object.addProperty("module", module.name().toLowerCase(Locale.ROOT));
     }
 
     private enum Module {
@@ -80,25 +89,8 @@ public final class CEIApotheosisModuleCondition implements ICondition {
             try {
                 return valueOf(name.toUpperCase(Locale.ROOT));
             } catch (IllegalArgumentException exception) {
-                throw new JsonParseException("Unknown Apotheosis module '" + name + "'", exception);
+                throw new JsonParseException("Unknown Zenith module '" + name + "'", exception);
             }
-        }
-    }
-
-    public static final class Serializer implements IConditionSerializer<CEIApotheosisModuleCondition> {
-        @Override
-        public void write(JsonObject json, CEIApotheosisModuleCondition value) {
-            json.addProperty("module", value.module.name().toLowerCase(Locale.ROOT));
-        }
-
-        @Override
-        public CEIApotheosisModuleCondition read(JsonObject json) {
-            return new CEIApotheosisModuleCondition(Module.parse(GsonHelper.getAsString(json, "module")));
-        }
-
-        @Override
-        public ResourceLocation getID() {
-            return ID;
         }
     }
 }

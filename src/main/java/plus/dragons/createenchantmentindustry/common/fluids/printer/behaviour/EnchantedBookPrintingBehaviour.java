@@ -21,6 +21,7 @@ package plus.dragons.createenchantmentindustry.common.fluids.printer.behaviour;
 import com.mojang.serialization.DataResult;
 import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
 import com.simibubi.create.foundation.utility.CreateLang;
+import io.github.fabricators_of_create.porting_lib.fluids.FluidStack;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,7 +38,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fluids.FluidStack;
 import plus.dragons.createenchantmentindustry.common.CEICommon;
 import plus.dragons.createenchantmentindustry.common.fluids.experience.ExperienceHelper;
 import plus.dragons.createenchantmentindustry.common.fluids.printer.PrinterBlockEntity;
@@ -46,6 +46,7 @@ import plus.dragons.createenchantmentindustry.common.processing.enchanter.CEIEnc
 import plus.dragons.createenchantmentindustry.common.registry.CEIDataMaps;
 import plus.dragons.createenchantmentindustry.common.registry.CEIEnchantments;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
+import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 import plus.dragons.createenchantmentindustry.util.CEIIntIntPair;
 import plus.dragons.createenchantmentindustry.util.CEILang;
 
@@ -99,8 +100,8 @@ public class EnchantedBookPrintingBehaviour implements PrintingBehaviour {
     }
 
     private OptionalInt getCost(FluidStack fluid) {
-        int cost = this.cost;
-        cost = ExperienceHelper.getFluidFromExperience(fluid, cost);
+        int cost = Math.toIntExact(CEIFluidUnits.toMillibuckets(
+                ExperienceHelper.getFluidFromExperience(fluid, this.cost)));
         if (cost == 0)
             return OptionalInt.empty();
         return OptionalInt.of(cost);
@@ -130,8 +131,8 @@ public class EnchantedBookPrintingBehaviour implements PrintingBehaviour {
     }
 
     @Override
-    public int getRequiredFluidAmount(Level level, ItemStack stack, FluidStack fluidStack) {
-        return getCost(fluidStack).orElse(0);
+    public long getRequiredFluidAmount(Level level, ItemStack stack, FluidStack fluidStack) {
+        return CEIFluidUnits.millibuckets(getCost(fluidStack).orElse(0));
     }
 
     @Override

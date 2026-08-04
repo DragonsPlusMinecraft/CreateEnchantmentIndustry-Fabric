@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "create_enchantment_industry:infused_dragon_breath_bucket",
+      "required": false
+    }
+  ]
+}

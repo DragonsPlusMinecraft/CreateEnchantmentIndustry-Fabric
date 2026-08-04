@@ -27,7 +27,7 @@ import net.minecraft.resources.ResourceLocation;
 import plus.dragons.createenchantmentindustry.common.registry.CEIDataMaps;
 
 /**
- * A Forge 1.20.1 representation of a NeoForge data-map type.
+ * A Fabric 1.20.1 representation of a NeoForge data-map type.
  *
  * <p>The type only describes the registry, id and codec. Values live in the immutable snapshots managed by
  * {@link CEIDataMaps}; keeping those responsibilities separate prevents partially applied reloads.</p>

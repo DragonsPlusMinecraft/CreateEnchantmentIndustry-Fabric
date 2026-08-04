@@ -27,6 +27,7 @@ import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
 import com.simibubi.create.foundation.item.ItemHelper;
+import net.fabricmc.fabric.api.transfer.v1.item.PlayerInventoryStorage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -38,7 +39,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.items.wrapper.InvWrapper;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createdragonsplus.util.CodeReference;
 import plus.dragons.createenchantmentindustry.common.fluids.printer.behaviour.PrintingBehaviour;
@@ -140,7 +140,7 @@ public class PrinterBehaviour extends FilteringBehaviour {
             return;
 
         if (getFilter().getItem() instanceof FilterItem) {
-            if (!player.isCreative() || ItemHelper.extract(new InvWrapper(player.getInventory()), stack -> ItemStack.isSameItemSameTags(stack, getFilter(side)), true).isEmpty())
+            if (!player.isCreative() || ItemHelper.extract(PlayerInventoryStorage.of(player), stack -> ItemStack.isSameItemSameTags(stack, getFilter(side)), true).isEmpty())
                 player.getInventory().placeItemBackInInventory(getFilter(side).copy());
         }
 
