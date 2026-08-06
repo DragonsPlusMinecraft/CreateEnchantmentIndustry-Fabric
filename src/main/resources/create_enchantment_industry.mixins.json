@@ -18,8 +18,12 @@
     "SmartBlockEntityMixin"
   ],
   "client": [
+    "client.BlockElementFaceLightDeserializerMixin",
+    "client.BlockElementFaceLightMixin",
+    "client.BlockElementLightDeserializerMixin",
     "client.BlazeEnchanterRenderMixin",
-    "client.BlazeForgerRenderMixin"
+    "client.BlazeForgerRenderMixin",
+    "client.FaceBakeryLightMixin"
   ],
   "injectors": {
     "defaultRequire": 1
