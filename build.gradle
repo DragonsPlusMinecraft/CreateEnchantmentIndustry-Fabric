@@ -216,7 +216,7 @@ publishMods {
     additionalFiles.from remapSourcesJar.archiveFile
     changelog = project.file('CHANGELOG.md').text
     version = mod_version
-    type = ALPHA
+    type = BETA
     displayName = "Create: Enchantment Industry ${mod_version} for Create Fabric ${minecraft_version}-${create_version_production}"
     modLoaders.add('fabric')
 

@@ -222,10 +222,25 @@ public class InfusingRecipe extends ProcessingRecipe<Container> {
             Storage<ItemVariant> items, EnchantingRecipe recipe, InfusionStats stats) {
         for (StorageView<ItemVariant> view : items.nonEmptyViews()) {
             ItemStack input = view.getResource().toStack();
-            if (view.getAmount() > 0 && recipe.matches(input, stats.eterna(), stats.quanta(), stats.arcana()))
+            if (view.getAmount() > 0 && matchesIgnoringMaxRequirements(recipe, input, stats))
                 return view.getResource();
         }
         return ItemVariant.blank();
+    }
+
+    private static boolean matchesIgnoringMaxRequirements(
+            EnchantingRecipe recipe, ItemStack input, InfusionStats stats) {
+        // Keep specialized recipe checks while ignoring maximum requirements for the Infuser.
+        var maximum = recipe.getMaxRequirements();
+        return recipe.matches(
+                input,
+                clampToMaximum(stats.eterna(), maximum.eterna()),
+                clampToMaximum(stats.quanta(), maximum.quanta()),
+                clampToMaximum(stats.arcana(), maximum.arcana()));
+    }
+
+    private static float clampToMaximum(float value, float maximum) {
+        return maximum > -1 ? Math.min(value, maximum) : value;
     }
 
     private static FluidStack findMatchingFluid(Storage<FluidVariant> fluids, FluidIngredient ingredient) {

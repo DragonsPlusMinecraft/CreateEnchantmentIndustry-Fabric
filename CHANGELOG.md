@@ -1,6 +1,6 @@
-## Create: Enchantment Industry 2.5.0-pre.2 for Fabric 1.20.1
+## Create: Enchantment Industry 2.5.1 for Fabric 1.20.1
 
-This preview ports the complete Create: Enchantment Industry 2.5 feature set to Fabric 1.20.1 with Java 17 and Create Fabric 6.0.8.1.
+This beta release brings the complete Create: Enchantment Industry 2.5 feature set to Fabric 1.20.1 with Java 17 and Create Fabric 6.0.8.1.
 
 ### Highlights
 
@@ -9,15 +9,16 @@ This preview ports the complete Create: Enchantment Industry 2.5 feature set to 
 - Added optional JEI support while keeping both JEI and Zenith safe to omit.
 - Preserved the `create_enchantment_industry` namespace, content identifiers, configuration keys, and data paths.
 
-### Fixed in pre.2
+### Fixed
 
+- Fixed the Infuser rejecting Zenith infusion recipes when Eterna, Quanta, or Arcana exceeded the recipe's maximum requirements. Minimum requirements and specialized recipe checks remain enforced, while dynamic outputs and input NBT are preserved ([#475](https://github.com/DragonsPlusMinecraft/CreateEnchantmentIndustry/issues/475)).
 - Restored full-bright rendering for model elements that declare `block_light` and `sky_light` metadata.
 - Fixed the glowing panels on full Ender Woven Bags in placed, contraption, and item rendering contexts.
 - Applied the same model-lighting fix to Experience Lanterns, Infuser needles, Gem Cutters, and Affix Augmentors.
 
 ### Compatibility
 
-- Requires Fabric API, Create Fabric 6.0.8.1, and Create: Dragons Plus Fabric 1.11.4-preview.1.
+- Requires Fabric API 0.92.6 or newer, Create Fabric 6.0.8.1, and Create: Dragons Plus Fabric 1.11.4-p.1 or newer.
 - JEI 15.20.0.106 and Zenith 1.2.5 are optional integrations.
 - Touhou Little Maid integration is not included because the mod is unavailable for Fabric 1.20.1.
 - This port supports new worlds only; Forge and older Fabric worlds are not supported for upgrading.
