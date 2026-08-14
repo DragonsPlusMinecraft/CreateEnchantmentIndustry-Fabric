@@ -259,7 +259,7 @@ publishMods {
     changelog = project.file('CHANGELOG.md').text
     version = mod_version
     type = BETA
-    displayName = "Create: Enchantment Industry ${mod_version} for Create Fabric ${minecraft_version}-${create_version_production}"
+    displayName = "CEI ${mod_version} for Create Fabric ${minecraft_version}-${create_version_production}"
     modLoaders.add('fabric')
 
     curseforge {
