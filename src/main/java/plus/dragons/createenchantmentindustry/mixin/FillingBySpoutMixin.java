@@ -31,13 +31,13 @@ import plus.dragons.createenchantmentindustry.common.fluids.experience.Experienc
 
 @Mixin(value = FillingBySpout.class, remap = false)
 public class FillingBySpoutMixin {
-    @Inject(method = "canItemBeFilled", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/fluids/transfer/GenericItemFilling;canItemBeFilled(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;)Z"), cancellable = true)
+    @Inject(method = "canItemBeFilled", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/fluids/transfer/GenericItemFilling;canItemBeFilled(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;)Z", remap = true), cancellable = true, remap = false)
     private static void canItemBeFilled$mending(Level level, ItemStack stack, CallbackInfoReturnable<Boolean> cir) {
         if (ExperienceHelper.canRepairItem(stack))
             cir.setReturnValue(true);
     }
 
-    @Inject(method = "getRequiredAmountForItem", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/fluids/transfer/GenericItemFilling;getRequiredAmountForItem(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;Lio/github/fabricators_of_create/porting_lib/fluids/FluidStack;)J"), cancellable = true)
+    @Inject(method = "getRequiredAmountForItem", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/fluids/transfer/GenericItemFilling;getRequiredAmountForItem(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;Lio/github/fabricators_of_create/porting_lib/fluids/FluidStack;)J", remap = true), cancellable = true, remap = false)
     private static void getRequiredAmountForItem$mending(Level level, ItemStack stack, FluidStack availableFluid, CallbackInfoReturnable<Long> cir) {
         if (!(level instanceof ServerLevel serverLevel && ExperienceHelper.canRepairItem(stack))) {
             return;
@@ -51,7 +51,7 @@ public class FillingBySpoutMixin {
             cir.setReturnValue(requiredFluid);
     }
 
-    @Inject(method = "fillItem", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/fluids/transfer/GenericItemFilling;fillItem(Lnet/minecraft/world/level/Level;JLnet/minecraft/world/item/ItemStack;Lio/github/fabricators_of_create/porting_lib/fluids/FluidStack;)Lnet/minecraft/world/item/ItemStack;"), cancellable = true)
+    @Inject(method = "fillItem", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/fluids/transfer/GenericItemFilling;fillItem(Lnet/minecraft/world/level/Level;JLnet/minecraft/world/item/ItemStack;Lio/github/fabricators_of_create/porting_lib/fluids/FluidStack;)Lnet/minecraft/world/item/ItemStack;", remap = true), cancellable = true, remap = false)
     private static void fillItem$mending(Level level, long requiredAmount, ItemStack stack, FluidStack availableFluid, CallbackInfoReturnable<ItemStack> cir) {
         if ((level instanceof ServerLevel serverLevel && ExperienceHelper.canRepairItem(stack))) {
             int availableXp = ExperienceHelper.getExperienceFromFluid(availableFluid);

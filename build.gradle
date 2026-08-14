@@ -118,7 +118,7 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
     modImplementation "com.simibubi.create:create-fabric:${create_fabric_version}"
-    modImplementation "plus.dragons.createdragonsplus:create-dragons-plus-fabric:${create_dragons_plus_version}"
+    modImplementation "maven.modrinth:create-dragons-plus:${create_dragons_plus_version}"
 
     implementation "io.github.llamalad7:mixinextras-fabric:${mixin_extras_version}"
     annotationProcessor "io.github.llamalad7:mixinextras-common:${mixin_extras_version}"
@@ -178,6 +178,48 @@ tasks.named('processResources', ProcessResources).configure {
 tasks.withType(Jar).configureEach {
     from 'LICENSE.txt'
     exclude '.cache'
+}
+
+def verifyFillingBySpoutMixinRemapping = tasks.register('verifyFillingBySpoutMixinRemapping') {
+    group = 'verification'
+    description = 'Verifies that the production Spout mixin targets are remapped to Fabric intermediary names.'
+    dependsOn tasks.named('remapJar')
+
+    def remappedJar = tasks.named('remapJar').flatMap { it.archiveFile }
+    inputs.file(remappedJar)
+
+    doLast {
+        def jar = new java.util.zip.ZipFile(remappedJar.get().asFile)
+        try {
+            def refmapName = "${mod_artifact_id}-fabric-${minecraft_version}-refmap.json"
+            def refmapEntry = jar.getEntry(refmapName)
+            if (refmapEntry == null) {
+                throw new GradleException("Missing ${refmapName} in ${remappedJar.get().asFile.name}")
+            }
+
+            def refmap = new groovy.json.JsonSlurper().parse(jar.getInputStream(refmapEntry))
+            def mixinClass = 'plus/dragons/createenchantmentindustry/mixin/FillingBySpoutMixin'
+            def mappings = refmap['mappings'][mixinClass]
+            def targets = [
+                    'Lcom/simibubi/create/content/fluids/transfer/GenericItemFilling;canItemBeFilled(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;)Z',
+                    'Lcom/simibubi/create/content/fluids/transfer/GenericItemFilling;getRequiredAmountForItem(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;Lio/github/fabricators_of_create/porting_lib/fluids/FluidStack;)J',
+                    'Lcom/simibubi/create/content/fluids/transfer/GenericItemFilling;fillItem(Lnet/minecraft/world/level/Level;JLnet/minecraft/world/item/ItemStack;Lio/github/fabricators_of_create/porting_lib/fluids/FluidStack;)Lnet/minecraft/world/item/ItemStack;'
+            ]
+
+            targets.each { target ->
+                def remappedTarget = mappings == null ? null : mappings[target]
+                if (remappedTarget == null || remappedTarget == target || !remappedTarget.contains('Lnet/minecraft/class_')) {
+                    throw new GradleException("FillingBySpout mixin target was not remapped: ${target}")
+                }
+            }
+        } finally {
+            jar.close()
+        }
+    }
+}
+
+tasks.named('check').configure {
+    dependsOn verifyFillingBySpoutMixinRemapping
 }
 
 spotless {
