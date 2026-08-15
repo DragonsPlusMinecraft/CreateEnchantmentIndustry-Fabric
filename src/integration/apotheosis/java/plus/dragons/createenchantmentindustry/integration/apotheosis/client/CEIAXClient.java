@@ -18,16 +18,13 @@
 
 package plus.dragons.createenchantmentindustry.integration.apotheosis.client;
 
-import com.simibubi.create.foundation.item.render.CustomRenderedItems;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
 import net.fabricmc.fabric.api.client.render.fluid.v1.SimpleFluidRenderHandler;
-import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.minecraft.client.renderer.RenderType;
 import plus.dragons.createdragonsplus.common.fluids.SolidRenderFluidType;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.client.ponder.CEIAXPonderPlugin;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.client.registry.CEIAXPartialModels;
-import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.affix.blazeComposer.BlazeComposerItemRenderer;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.registry.CEIAXBlocks;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.registry.CEIAXFluids;
 
@@ -38,9 +35,6 @@ public final class CEIAXClient {
     public static void initialize() {
         CEIAXPartialModels.register();
         CEIAXPonderPlugin.register();
-        var item = CEIAXBlocks.BLAZE_COMPOSER.asItem();
-        BuiltinItemRendererRegistry.INSTANCE.register(item, new BlazeComposerItemRenderer());
-        CustomRenderedItems.register(item);
         BlockRenderLayerMap.INSTANCE.putBlock(CEIAXBlocks.BLAZE_COMPOSER.get(), RenderType.cutoutMipped());
         registerFluid(CEIAXFluids.APOTHEOTIC_ESSENCE, CEIAXFluids.APOTHEOTIC_ESSENCE_TYPE);
         registerFluid(CEIAXFluids.CRYSTAL_ESSENCE, CEIAXFluids.CRYSTAL_ESSENCE_TYPE);

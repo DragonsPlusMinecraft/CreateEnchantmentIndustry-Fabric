@@ -1,11 +1,12 @@
-## Create: Enchantment Industry 2.5.1-c for Fabric 1.20.1
+## Create: Enchantment Industry 2.5.1-d for Fabric 1.20.1
 
-This beta hotfix addresses the production-only Spout crash reported in [#477](https://github.com/DragonsPlusMinecraft/CreateEnchantmentIndustry/issues/477).
+This beta hotfix resolves two Fabric client regressions.
 
 ### Fixed
 
-- Fixed Spouts crashing when they attempted to process any item in a production Fabric environment. All three Mending integration injection points are now remapped correctly.
+- Restored the hats on Blaze Enchanter and Blaze Forger item models by registering their custom renderers before the first model bake ([#478](https://github.com/DragonsPlusMinecraft/CreateEnchantmentIndustry/issues/478)). The same fix also covers the Classic Blaze Enchanter and the optional Blaze Composer.
+- Fixed the Experience Lantern crashing Ponder scenes when its fluid tank was restored before the block entity had been attached to a world ([#479](https://github.com/DragonsPlusMinecraft/CreateEnchantmentIndustry/issues/479)). Lantern light levels now synchronize safely after initialization and only update the block state when needed.
 
-### Dependencies
+### Compatibility
 
-- Updated the required Create: Dragons Plus Fabric version to `1.11.7-c`, which includes production-safe Fabric Mixin mappings.
+- Dependency requirements are unchanged from 2.5.1-c.

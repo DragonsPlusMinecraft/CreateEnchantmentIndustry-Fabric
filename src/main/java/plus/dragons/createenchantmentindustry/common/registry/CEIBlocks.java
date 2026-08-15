@@ -19,6 +19,7 @@
 package plus.dragons.createenchantmentindustry.common.registry;
 
 import static com.simibubi.create.api.contraption.storage.fluid.MountedFluidStorageType.mountedFluidStorage;
+import static com.simibubi.create.foundation.data.CreateRegistrate.customRenderedItem;
 import static com.simibubi.create.foundation.data.ModelGen.customItemModel;
 import static com.simibubi.create.foundation.data.TagGen.pickaxeOnly;
 import static plus.dragons.createenchantmentindustry.common.CEICommon.REGISTRATE;
@@ -59,8 +60,11 @@ import plus.dragons.createenchantmentindustry.common.kinetics.grindstone.Mechani
 import plus.dragons.createenchantmentindustry.common.kinetics.grindstone.MechanicalGrindstoneBlock;
 import plus.dragons.createenchantmentindustry.common.processing.BlazeCustomRenderedBlockItem;
 import plus.dragons.createenchantmentindustry.common.processing.classic_enchanter.ClassicBlazeEnchanterBlock;
+import plus.dragons.createenchantmentindustry.common.processing.classic_enchanter.ClassicBlazeEnchanterItemRenderer;
 import plus.dragons.createenchantmentindustry.common.processing.enchanter.BlazeEnchanterBlock;
+import plus.dragons.createenchantmentindustry.common.processing.enchanter.BlazeEnchanterItemRenderer;
 import plus.dragons.createenchantmentindustry.common.processing.forger.BlazeForgerBlock;
+import plus.dragons.createenchantmentindustry.common.processing.forger.BlazeForgerItemRenderer;
 import plus.dragons.createenchantmentindustry.config.CEIConfig;
 
 @SuppressWarnings("removal")
@@ -121,6 +125,7 @@ public class CEIBlocks {
                     ctx.getEntry(),
                     new ModelFile.UncheckedModelFile(Create.asResource("block/blaze_burner/block"))))
             .item(BlazeCustomRenderedBlockItem.Enchanter::new)
+            .transform(customRenderedItem(() -> BlazeEnchanterItemRenderer::new))
             .model((ctx, prov) -> prov.getBuilder(ctx.getName())
                     .parent(new ModelFile.UncheckedModelFile(
                             Create.asResource("block/blaze_burner/block_with_blaze"))))
@@ -137,6 +142,7 @@ public class CEIBlocks {
                     ctx.getEntry(),
                     new ModelFile.UncheckedModelFile(Create.asResource("block/blaze_burner/block"))))
             .item(BlazeCustomRenderedBlockItem.Forger::new)
+            .transform(customRenderedItem(() -> BlazeForgerItemRenderer::new))
             .model((ctx, prov) -> prov.getBuilder(ctx.getName())
                     .parent(new ModelFile.UncheckedModelFile(
                             Create.asResource("block/blaze_burner/block_with_blaze"))))
@@ -153,6 +159,7 @@ public class CEIBlocks {
                     ctx.getEntry(),
                     new ModelFile.UncheckedModelFile(Create.asResource("block/blaze_burner/block"))))
             .item(BlazeCustomRenderedBlockItem.ClassicEnchanter::new)
+            .transform(customRenderedItem(() -> ClassicBlazeEnchanterItemRenderer::new))
             .model((ctx, prov) -> prov.getBuilder(ctx.getName())
                     .parent(new ModelFile.UncheckedModelFile(
                             Create.asResource("block/blaze_burner/block_with_blaze"))))

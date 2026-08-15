@@ -75,6 +75,12 @@ public class ExperienceLanternBlockEntity extends SmartBlockEntity implements IH
         }
     }
 
+    @Override
+    public void initialize() {
+        super.initialize();
+        updateLight();
+    }
+
     public FluidTankBehaviour getTank() {
         return tank;
     }
@@ -158,10 +164,18 @@ public class ExperienceLanternBlockEntity extends SmartBlockEntity implements IH
         behaviours.add(tank);
     }
 
-    protected void onFluidStackChanged(FluidStack newFluidStack) {
+    protected void onFluidStackChanged(FluidStack ignored) {
+        updateLight();
+    }
+
+    private void updateLight() {
+        if (!hasLevel()) return;
         int light = ((int) (((float) tank.getPrimaryTank().tank.getFluid().getAmount() / tank.getPrimaryTank().tank.getCapacity()) * 15f));
         light = Math.min(Math.max(0, light), 15);
-        level.setBlockAndUpdate(getBlockPos(), getBlockState().setValue(ExperienceLanternBlock.LIGHT, light));
+        BlockState state = getBlockState();
+        if (state.getValue(ExperienceLanternBlock.LIGHT) != light) {
+            level.setBlockAndUpdate(getBlockPos(), state.setValue(ExperienceLanternBlock.LIGHT, light));
+        }
     }
 
     public @Nullable Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {

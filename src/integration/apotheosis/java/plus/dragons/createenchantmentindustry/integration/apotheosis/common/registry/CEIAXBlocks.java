@@ -18,6 +18,7 @@
 
 package plus.dragons.createenchantmentindustry.integration.apotheosis.common.registry;
 
+import static com.simibubi.create.foundation.data.CreateRegistrate.customRenderedItem;
 import static com.simibubi.create.foundation.data.ModelGen.customItemModel;
 import static plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.CEIACommon.REGISTRATE;
 
@@ -41,6 +42,7 @@ import plus.dragons.createenchantmentindustry.integration.apotheosis.common.kine
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.affix.affixEnhancer.AffixAugmentorBlock;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.affix.blazeComposer.BlazeComposerBlock;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.affix.blazeComposer.BlazeComposerBlockItem;
+import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.affix.blazeComposer.BlazeComposerItemRenderer;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.common.processing.socket.gem.gemCutter.GemCutterBlock;
 import plus.dragons.createenchantmentindustry.integration.apothic_enchanting.common.CEIACommon;
 
@@ -71,6 +73,7 @@ public class CEIAXBlocks {
                     ctx.getEntry(),
                     new ModelFile.UncheckedModelFile(Create.asResource("block/blaze_burner/block"))))
             .item(BlazeComposerBlockItem::new)
+            .transform(customRenderedItem(() -> BlazeComposerItemRenderer::new))
             .model((ctx, prov) -> prov.getBuilder(ctx.getName())
                     .parent(new ModelFile.UncheckedModelFile(
                             Create.asResource("block/blaze_burner/block_with_blaze"))))

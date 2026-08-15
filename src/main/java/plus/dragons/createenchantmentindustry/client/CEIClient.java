@@ -18,22 +18,15 @@
 
 package plus.dragons.createenchantmentindustry.client;
 
-import com.simibubi.create.foundation.item.render.CustomRenderedItemModelRenderer;
-import com.simibubi.create.foundation.item.render.CustomRenderedItems;
 import net.createmod.ponder.foundation.PonderIndex;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.world.item.Item;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plus.dragons.createenchantmentindustry.client.model.CEIPartialModels;
 import plus.dragons.createenchantmentindustry.client.ponder.CEIPonderPlugin;
-import plus.dragons.createenchantmentindustry.common.processing.classic_enchanter.ClassicBlazeEnchanterItemRenderer;
-import plus.dragons.createenchantmentindustry.common.processing.enchanter.BlazeEnchanterItemRenderer;
-import plus.dragons.createenchantmentindustry.common.processing.forger.BlazeForgerItemRenderer;
 import plus.dragons.createenchantmentindustry.common.registry.CEIBlocks;
 import plus.dragons.createenchantmentindustry.common.registry.CEIDataMaps;
 import plus.dragons.createenchantmentindustry.integration.ModIntegration;
@@ -52,9 +45,6 @@ public final class CEIClient implements ClientModInitializer {
                 CEIBlocks.CLASSIC_BLAZE_ENCHANTER.get(),
                 CEIBlocks.BLAZE_FORGER.get(),
                 CEIBlocks.EXPERIENCE_LANTERN.get());
-        registerCustomRenderer(CEIBlocks.BLAZE_ENCHANTER.asItem(), new BlazeEnchanterItemRenderer());
-        registerCustomRenderer(CEIBlocks.BLAZE_FORGER.asItem(), new BlazeForgerItemRenderer());
-        registerCustomRenderer(CEIBlocks.CLASSIC_BLAZE_ENCHANTER.asItem(), new ClassicBlazeEnchanterItemRenderer());
         initializeIntegrationClient(
                 ModIntegration.APOTHEOSIS,
                 "plus.dragons.createenchantmentindustry.integration.apotheosis.client.CEIAXClient");
@@ -62,11 +52,6 @@ public final class CEIClient implements ClientModInitializer {
                 ModIntegration.APOTHIC_ENCHANTING,
                 "plus.dragons.createenchantmentindustry.integration.apothic_enchanting.client.CEIAClient");
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> CEIDataMaps.clearClientSnapshot());
-    }
-
-    private static void registerCustomRenderer(Item item, CustomRenderedItemModelRenderer renderer) {
-        BuiltinItemRendererRegistry.INSTANCE.register(item, renderer);
-        CustomRenderedItems.register(item);
     }
 
     private static void initializeIntegrationClient(ModIntegration integration, String className) {
