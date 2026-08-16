@@ -26,14 +26,23 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import plus.dragons.createenchantmentindustry.client.model.CEIPartialModels;
+import plus.dragons.createenchantmentindustry.client.renderer.FabricPartialItemRenderer;
 
 public class BlazeEnchanterItemRenderer extends CustomRenderedItemModelRenderer {
     @Override
     protected void render(ItemStack stack, CustomRenderedItemModel model, PartialItemModelRenderer renderer, ItemDisplayContext transformType, PoseStack poseStack, MultiBufferSource bufferSource, int light, int overlay) {
-        renderer.render(model.getOriginalModel(), light);
+        FabricPartialItemRenderer.render(
+                stack, model.getOriginalModel(), transformType, poseStack, bufferSource, light, overlay);
         poseStack.pushPose();
         poseStack.translate(.5f, .75f, .5f);
-        renderer.render(CEIPartialModels.BLAZE_ENCHANTER_HAT.get(), light);
+        FabricPartialItemRenderer.render(
+                stack,
+                CEIPartialModels.BLAZE_ENCHANTER_HAT.get(),
+                transformType,
+                poseStack,
+                bufferSource,
+                light,
+                overlay);
         poseStack.popPose();
     }
 }

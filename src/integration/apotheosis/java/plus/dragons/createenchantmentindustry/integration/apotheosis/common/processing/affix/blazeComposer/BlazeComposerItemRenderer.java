@@ -25,15 +25,24 @@ import com.simibubi.create.foundation.item.render.PartialItemModelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import plus.dragons.createenchantmentindustry.client.renderer.FabricPartialItemRenderer;
 import plus.dragons.createenchantmentindustry.integration.apotheosis.client.registry.CEIAXPartialModels;
 
 public class BlazeComposerItemRenderer extends CustomRenderedItemModelRenderer {
     @Override
     protected void render(ItemStack stack, CustomRenderedItemModel model, PartialItemModelRenderer renderer, ItemDisplayContext transformType, PoseStack poseStack, MultiBufferSource bufferSource, int light, int overlay) {
-        renderer.render(model.getOriginalModel(), light);
+        FabricPartialItemRenderer.render(
+                stack, model.getOriginalModel(), transformType, poseStack, bufferSource, light, overlay);
         poseStack.pushPose();
         poseStack.translate(.5f, .75f, .5f);
-        renderer.render(CEIAXPartialModels.BLAZE_COMPOSER_HAT.get(), light);
+        FabricPartialItemRenderer.render(
+                stack,
+                CEIAXPartialModels.BLAZE_COMPOSER_HAT.get(),
+                transformType,
+                poseStack,
+                bufferSource,
+                light,
+                overlay);
         poseStack.popPose();
     }
 }

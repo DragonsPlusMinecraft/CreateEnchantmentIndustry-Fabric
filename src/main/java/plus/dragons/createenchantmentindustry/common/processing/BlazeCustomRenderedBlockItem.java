@@ -22,7 +22,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
-/** Common-side block item whose renderer is installed by the Fabric client entrypoint. */
+/** Common-side block item whose renderer is registered while its item entry is built. */
 public abstract class BlazeCustomRenderedBlockItem extends BlockItem {
     protected BlazeCustomRenderedBlockItem(Block block, Item.Properties properties) {
         super(block, properties);

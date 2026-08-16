@@ -37,6 +37,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import plus.dragons.createenchantmentindustry.client.renderer.FabricPartialItemRenderer;
 
 public class ClassicBlazeEnchanterItemRenderer extends CustomRenderedItemModelRenderer {
     private final Supplier<BookModel> bookModelSupplier;
@@ -48,7 +49,8 @@ public class ClassicBlazeEnchanterItemRenderer extends CustomRenderedItemModelRe
 
     @Override
     protected void render(ItemStack stack, CustomRenderedItemModel model, PartialItemModelRenderer renderer, ItemDisplayContext transformType, PoseStack poseStack, MultiBufferSource bufferSource, int light, int overlay) {
-        renderer.render(model.getOriginalModel(), light);
+        FabricPartialItemRenderer.render(
+                stack, model.getOriginalModel(), transformType, poseStack, bufferSource, light, overlay);
         poseStack.pushPose();
         poseStack.translate(0, -0.3, 0);
         poseStack.mulPose(Axis.ZP.rotationDegrees(90.0f));

@@ -25,8 +25,10 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.renderer.RenderType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import plus.dragons.createenchantmentindustry.client.model.CEICustomRenderedItemModels;
 import plus.dragons.createenchantmentindustry.client.model.CEIPartialModels;
 import plus.dragons.createenchantmentindustry.client.ponder.CEIPonderPlugin;
+import plus.dragons.createenchantmentindustry.client.renderer.FabricPartialItemRenderer;
 import plus.dragons.createenchantmentindustry.common.registry.CEIBlocks;
 import plus.dragons.createenchantmentindustry.common.registry.CEIDataMaps;
 import plus.dragons.createenchantmentindustry.integration.ModIntegration;
@@ -38,6 +40,8 @@ public final class CEIClient implements ClientModInitializer {
     public void onInitializeClient() {
         CEIClientNetwork.register();
         CEIPartialModels.register();
+        CEICustomRenderedItemModels.register();
+        FabricPartialItemRenderer.register();
         PonderIndex.addPlugin(new CEIPonderPlugin());
         BlockRenderLayerMap.INSTANCE.putBlocks(
                 RenderType.cutoutMipped(),
