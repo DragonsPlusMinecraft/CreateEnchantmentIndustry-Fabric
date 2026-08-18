@@ -6,7 +6,7 @@
       "tag": "c:brass_plates"
     },
     "=": {
-      "tag": "c:storage_blocks/iron"
+      "tag": "c:iron_blocks"
     },
     "o": {
       "item": "create:spout"

@@ -20,6 +20,7 @@ package plus.dragons.createenchantmentindustry.data;
 
 import static com.simibubi.create.AllBlocks.*;
 import static com.simibubi.create.AllItems.*;
+import static io.github.fabricators_of_create.porting_lib.tags.Tags.Items.STORAGE_BLOCKS_IRON;
 import static net.minecraft.world.item.Items.*;
 import static plus.dragons.createdragonsplus.common.registry.CDPBlocks.FLUID_HATCH;
 import static plus.dragons.createdragonsplus.common.registry.CDPItems.BLAZE_UPGRADE_SMITHING_TEMPLATE;
@@ -54,7 +55,6 @@ import plus.dragons.createenchantmentindustry.util.CEIFluidUnits;
 
 public class CEIRecipeProvider extends RecipeProvider {
     private static final TagKey<Item> EGGS = TagKey.create(Registries.ITEM, new ResourceLocation("c", "eggs"));
-    private static final TagKey<Item> STORAGE_BLOCKS_IRON = TagKey.create(Registries.ITEM, new ResourceLocation("c", "storage_blocks/iron"));
     private static final String ANDESITE = "andesite";
     private static final String COPPER = "copper";
     private static final String BRASS = "brass";
