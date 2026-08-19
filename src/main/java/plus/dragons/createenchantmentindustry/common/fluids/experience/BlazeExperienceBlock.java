@@ -84,11 +84,14 @@ public abstract class BlazeExperienceBlock<T extends BlazeExperienceBlockEntity>
         if (fuel != null) {
             boolean applied = blaze.applyExperienceFuel(fuel, forceOverflow, simulate);
             if (applied) {
-                if (!notConsume)
+                ItemStack remainder = ItemStack.EMPTY;
+                if (!notConsume) {
+                    remainder = fuel.usingConvertTo().map(ItemStack::copy).orElseGet(() -> {
+                        var craftingRemainder = stack.getItem().getCraftingRemainingItem();
+                        return craftingRemainder == null ? ItemStack.EMPTY : craftingRemainder.getDefaultInstance();
+                    });
                     stack.shrink(1);
-                ItemStack remainder = notConsume
-                        ? ItemStack.EMPTY
-                        : fuel.usingConvertTo().orElseGet(() -> stack.getItem().getCraftingRemainingItem().getDefaultInstance()).copy();
+                }
                 return InteractionResultHolder.success(remainder);
             }
             return InteractionResultHolder.fail(ItemStack.EMPTY);
