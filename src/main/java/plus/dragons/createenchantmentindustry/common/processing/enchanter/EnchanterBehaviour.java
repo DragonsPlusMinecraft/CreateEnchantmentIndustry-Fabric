@@ -111,7 +111,7 @@ public class EnchanterBehaviour extends ScrollValueBehaviour implements IHaveGog
         if (stack.isEmpty()) {
             template = ItemStack.EMPTY;
             enchanting = new EnchantingBehaviour();
-        } else if (stack.getItem() instanceof EnchantingTemplateItem) {
+        } else if (stack.isEnchantable()) {
             template = stack;
             enchanting = new TemplateEnchantingBehaviour(template);
         } else return false;
