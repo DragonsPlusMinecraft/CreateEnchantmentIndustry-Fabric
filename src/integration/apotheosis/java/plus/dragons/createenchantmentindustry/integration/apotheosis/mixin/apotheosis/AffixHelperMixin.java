@@ -36,7 +36,7 @@ import plus.dragons.createenchantmentindustry.integration.apotheosis.common.proc
 @Restriction(require = @Condition(ModIntegration.Constants.APOTHEOSIS))
 @Mixin(AffixHelper.class)
 public class AffixHelperMixin {
-    @Inject(method = "getAffixes(Lnet/minecraft/world/item/ItemStack;)Ljava/util/Map;", at = @At("RETURN"), cancellable = true, remap = false)
+    @Inject(method = "getAffixes(Lnet/minecraft/world/item/ItemStack;)Ljava/util/Map;", at = @At("RETURN"), cancellable = true)
     private static void getAffixes$applyOverlimitLevels(
             ItemStack stack,
             CallbackInfoReturnable<Map<DynamicHolder<? extends Affix>, AffixInstance>> cir) {
