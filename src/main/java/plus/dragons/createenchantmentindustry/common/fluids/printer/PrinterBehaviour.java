@@ -49,6 +49,7 @@ public class PrinterBehaviour extends FilteringBehaviour {
     public static final String TEMPLATE = "PrintingTemplate";
     private final SmartFluidTankBehaviour tank;
     private PrintingBehaviour printing = new RecipePrintingBehaviour(ItemStack.EMPTY);
+    private boolean printingPending;
 
     public PrinterBehaviour(SmartBlockEntity be, SmartFluidTankBehaviour tank, ValueBoxTransform slot) {
         super(be, slot);
@@ -60,13 +61,17 @@ public class PrinterBehaviour extends FilteringBehaviour {
     }
 
     public boolean setFilter(ItemStack stack, @Nullable Player player) {
-        var result = PrintingBehaviour.create(getWorld(), tank, stack)
+        Level level = getWorld();
+        if (level == null)
+            return false;
+        var result = PrintingBehaviour.create(level, tank, stack)
                 .resultOrPartial(message -> {
                     if (player != null)
                         player.displayClientMessage(Component.translatable(message), true);
                 });
         if (result.isPresent() && super.setFilter(stack)) {
             printing = result.get();
+            printingPending = false;
             return true;
         }
         return false;
@@ -89,21 +94,38 @@ public class PrinterBehaviour extends FilteringBehaviour {
 
     @Override
     public void writeSafe(CompoundTag nbt) {
-        if (printing.isSafeNBT())
+        if (!printingPending && printing.isSafeNBT())
             nbt.put(TEMPLATE, getFilter().save(new CompoundTag()));
     }
 
     @Override
     public void read(CompoundTag nbt, boolean clientPacket) {
-        var filter = FilterItemStack.of(ItemStack.of(nbt.getCompound(TEMPLATE)));
-        var printing = PrintingBehaviour.create(getWorld(), tank, filter.item()).result();
-        if (printing.isPresent()) {
-            this.filter = filter;
-            this.printing = printing.get();
+        filter = FilterItemStack.of(ItemStack.of(nbt.getCompound(TEMPLATE)));
+        printing = RecipePrintingBehaviour.EMPTY;
+        printingPending = true;
+        resolvePrinting();
+    }
+
+    @Override
+    public void initialize() {
+        super.initialize();
+        resolvePrinting();
+    }
+
+    private void resolvePrinting() {
+        if (!printingPending)
+            return;
+        Level level = getWorld();
+        if (level == null)
+            return;
+        var result = PrintingBehaviour.create(level, tank, filter.item()).result();
+        if (result.isPresent()) {
+            printing = result.get();
         } else {
-            this.filter = FilterItemStack.empty();
-            this.printing = RecipePrintingBehaviour.EMPTY;
+            filter = FilterItemStack.empty();
+            printing = RecipePrintingBehaviour.EMPTY;
         }
+        printingPending = false;
     }
 
     @Override

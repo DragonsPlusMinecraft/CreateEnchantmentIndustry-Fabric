@@ -1,5 +1,4 @@
-## Create: Enchantment Industry 2.5.2-e for Fabric 1.20.1
+## Create: Enchantment Industry 2.5.2-f for Fabric 1.20.1
 
 ### Fixed
-- Fixed worlds failing to finish loading when Zenith or Zenith Renewed was installed ([#491](https://github.com/DragonsPlusMinecraft/CreateEnchantmentIndustry/issues/491)).
-- Fixed the Blaze Enchanter rejecting enchantable items placed in its template slot, restoring Template Enchanting Mode.
+- Fixed Printer templates disappearing after unloading and reloading their chunk, most notably enchanted-book templates ([#499](https://github.com/DragonsPlusMinecraft/CreateEnchantmentIndustry/issues/499)).
