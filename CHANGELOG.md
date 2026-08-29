@@ -1,4 +1,5 @@
-## Create: Enchantment Industry 2.5.2-f for Fabric 1.20.1
+## Create: Enchantment Industry 2.5.2-g for Fabric 1.20.1
 
 ### Fixed
-- Fixed Printer templates disappearing after unloading and reloading their chunk, most notably enchanted-book templates ([#499](https://github.com/DragonsPlusMinecraft/CreateEnchantmentIndustry/issues/499)).
+- Fixed Enchanting Templates not displaying their stored enchantments in item tooltips ([#501](https://github.com/DragonsPlusMinecraft/CreateEnchantmentIndustry/issues/501)).
+- Restored Blaze Forger merging for Enchanting Templates and Enchanted Books, and applying Enchanting Templates to already-enchanted books ([#502](https://github.com/DragonsPlusMinecraft/CreateEnchantmentIndustry/issues/502)).

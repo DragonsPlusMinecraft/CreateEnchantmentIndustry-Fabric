@@ -62,8 +62,33 @@ public class CEIEnchantmentHelper {
         return level;
     }
 
+    /**
+     * Compatibility equivalent of 1.21.1's primary-item check.
+     */
+    public static boolean isPrimaryItemFor(ItemStack stack, Enchantment enchantment) {
+        if (stack.is(Items.BOOK))
+            return true;
+        if (stack.getItem() instanceof EnchantingTemplateItem)
+            return false;
+        return enchantment.canEnchant(stack);
+    }
+
+    /**
+     * Compatibility equivalent of 1.21.1's general enchantment-support check.
+     */
+    public static boolean supportsEnchantment(ItemStack stack, Enchantment enchantment) {
+        if (stack.is(Items.ENCHANTED_BOOK) || stack.getItem() instanceof EnchantingTemplateItem)
+            return true;
+        return enchantment.canEnchant(stack);
+    }
+
+    /**
+     * @deprecated Use {@link #isPrimaryItemFor(ItemStack, Enchantment)} for direct enchanting or
+     *             {@link #supportsEnchantment(ItemStack, Enchantment)} for applying stored enchantments.
+     */
+    @Deprecated(forRemoval = false)
     public static boolean canApplyAtEnchantingTable(Enchantment enchantment, ItemStack stack) {
-        return stack.is(Items.BOOK) || enchantment.canEnchant(stack);
+        return isPrimaryItemFor(stack, enchantment);
     }
 
     public static List<EnchantmentInstance> getAvailableEnchantmentResults(int level, Stream<Enchantment> possibleEnchantments, boolean special) {

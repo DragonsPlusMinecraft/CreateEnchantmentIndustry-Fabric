@@ -60,7 +60,7 @@ public class EnchantingBehaviour {
         Stream<Enchantment> possible = holders
                 .filter(holder -> !special || !holder.is(CEIEnchantments.MOD_TAGS.enchantingExclusive))
                 .map(Holder::value)
-                .filter(enchantment -> CEIEnchantmentHelper.canApplyAtEnchantingTable(enchantment, stack));
+                .filter(enchantment -> CEIEnchantmentHelper.isPrimaryItemFor(stack, enchantment));
         return CEIEnchantmentHelper.getAvailableEnchantmentResults(adjustedLevel, possible, special);
     }
 
@@ -77,7 +77,8 @@ public class EnchantingBehaviour {
                 .filter(enchantment -> !enchantment.is(CEIEnchantments.MOD_TAGS.penaltyCursesDeny))
                 .map(Holder::value)
                 .filter(Enchantment::isCurse)
-                .filter(enchantment -> CEIEnchantmentHelper.canApplyAtEnchantingTable(enchantment, stack));
+                .filter(enchantment -> stack.is(Items.BOOK)
+                        || CEIEnchantmentHelper.supportsEnchantment(stack, enchantment));
         return CEIEnchantmentHelper.getAvailablePenaltyCurseResults(
                 possible,
                 CEIConfig.enchantments().blazeEnchanterBlockedLightningCurseMaxLevel.get());
